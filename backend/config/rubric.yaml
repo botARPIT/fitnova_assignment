@@ -1,0 +1,88 @@
+dimensions:
+  needs_discovery:
+    description: "Did the advisor ask about the customer's goals, current fitness level, schedule, budget, and any injuries/limitations before recommending a plan?"
+    scoring:
+      0: "No questions asked — jumped straight to pitching a plan"
+      1: "Asked 1 superficial question (e.g. 'what are you looking for?') with no follow-up"
+      2: "Asked about goals but missed budget, schedule, or health considerations"
+      3: "Covered goals and 1-2 other areas but didn't probe deeply"
+      4: "Thorough discovery — goals, budget, schedule, and health discussed"
+      5: "Exceptional — deep, empathetic discovery that shaped a tailored recommendation"
+    example_good: |
+      Advisor: Hi, thanks for your interest in FitNova! Before I tell you about our programs, I'd love to understand what you're looking for. What are your fitness goals right now?
+      Customer: I want to lose about 10 kgs.
+      Advisor: Got it. And have you done any structured fitness program before, or would this be your first time?
+      Customer: I used to go to a gym but stopped.
+      Advisor: Makes sense. Any injuries or health conditions I should know about? And what does your typical week look like — are mornings or evenings better for you?
+    example_bad: |
+      Advisor: Hi! So FitNova has three amazing plans. Let me tell you about our Elite plan — it's our best one with daily sessions and a dedicated coach. It's ₹17,999 per month.
+      Customer: Uh, okay... I was just looking for something basic.
+
+  product_knowledge:
+    description: "Did the advisor accurately represent FitNova's programs, pricing, guarantees, and policies? Any factual errors?"
+    scoring:
+      0: "Major factual errors — wrong pricing, invented features, or false guarantees"
+      1: "Multiple inaccuracies or significant confusion about plan details"
+      2: "Mostly correct but with 1-2 notable errors"
+      3: "Accurate information but lacked depth or confidence"
+      4: "Accurate and detailed knowledge of relevant plans and features"
+      5: "Expert-level — accurately tailored plan details to customer's specific needs"
+    example_good: |
+      Advisor: Our Pro plan is ₹9,999 per month. It includes 5 sessions per week with a dedicated 1-on-1 coach, a custom nutrition plan, and progress tracking. And you can start with a free 7-day trial before committing.
+    example_bad: |
+      Advisor: I think the basic plan is around ₹3,000 or so. And yeah, you'll definitely lose 10 kgs in the first month, guaranteed.
+
+  objection_handling:
+    description: "When the customer raised concerns or objections, did the advisor address them effectively without being pushy?"
+    scoring:
+      0: "Ignored objections entirely or became aggressive"
+      1: "Acknowledged objection but dismissed it or used pressure tactics"
+      2: "Attempted to address but response was weak or unconvincing"
+      3: "Addressed the objection reasonably but missed an opportunity"
+      4: "Handled objections well with relevant information and empathy"
+      5: "Masterful — turned objections into opportunities while respecting the customer"
+    example_good: |
+      Customer: I'm not sure I can afford ₹9,999 a month right now.
+      Advisor: I totally understand. A couple of things that might help — we have EMI options, so you could spread it over 3 or 6 months. And honestly, the free trial is a great way to experience it first with zero commitment. Want me to book that?
+    example_bad: |
+      Customer: That seems expensive.
+      Advisor: Well, how much is your health worth to you? This offer is only valid today, so I'd suggest you decide now.
+
+  compliance:
+    description: "Did the advisor follow FitNova's policies — no false guarantees, no undisclosed costs, no pressure tactics, proper disclosures?"
+    scoring:
+      0: "Serious violation — guaranteed results, hid costs, or used deceptive tactics"
+      1: "Multiple compliance issues"
+      2: "One notable compliance issue"
+      3: "Minor compliance concerns but nothing deceptive"
+      4: "Fully compliant with all policies"
+      5: "Exemplary — went above and beyond in transparency and ethical conduct"
+    example_good: |
+      Advisor: Just to be clear, results vary from person to person depending on consistency, diet, and other factors. We don't make guarantees, but our coaches work with you to set realistic milestones.
+    example_bad: |
+      Advisor: With our Elite plan, I can guarantee you'll lose 15 kgs in 3 months. We've never had anyone fail on this plan.
+
+  next_step_booking:
+    description: "Did the advisor successfully guide the customer toward booking a free trial session or a clear next step?"
+    scoring:
+      0: "No next step discussed — call ended without any forward motion"
+      1: "Vaguely mentioned 'we'll be in touch' with no concrete action"
+      2: "Suggested a next step but didn't push for confirmation"
+      3: "Proposed booking a trial but customer was non-committal and advisor didn't follow up"
+      4: "Successfully booked a trial or got a firm commitment for next step"
+      5: "Seamlessly guided to trial booking with confirmed date/time and follow-up plan"
+    example_good: |
+      Advisor: How about we book your free trial this week? I have slots on Wednesday evening and Saturday morning. Which works better for you?
+      Customer: Saturday morning works.
+      Advisor: Done — I've booked you for Saturday at 10 AM at our Koramangala center. I'll send you a confirmation on WhatsApp. Anything else you'd like to know?
+    example_bad: |
+      Advisor: So yeah, that's what we offer. You can check our website for more details. Bye!
+
+issue_tags:
+  - no_needs_discovery
+  - overpromising
+  - pressure_or_urgency_tactics
+  - price_before_value
+  - undisclosed_costs
+  - weak_or_missing_trial_booking
+  - talking_over_customer

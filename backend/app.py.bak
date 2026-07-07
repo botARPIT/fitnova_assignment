@@ -1,0 +1,492 @@
+"""
+FitNova Call Analysis — Phase 1 Prototype
+Two endpoints: /transcribe (Deepgram STT or WhisperX) and /flag (LangChain structured output)
+"""
+
+import uuid
+import json
+import logging
+import time
+
+import yaml
+import uvicorn
+import torch
+from fastapi import FastAPI, UploadFile, HTTPException, Query
+from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel, Field
+from typing import Literal, Optional
+from enum import Enum
+
+from deepgram import DeepgramClient
+
+from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_core.messages import SystemMessage, HumanMessage
+from rapidfuzz import fuzz
+
+from config import settings
+
+# ---------------------------------------------------------------------------
+# Setup
+# ---------------------------------------------------------------------------
+
+logging.basicConfig(level=settings.log_level.upper())
+log = logging.getLogger("fitnova")
+
+app = FastAPI(title="FitNova Call Analysis", version="0.1.0")
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+
+# ---------------------------------------------------------------------------
+# Load config (once at startup)
+# ---------------------------------------------------------------------------
+
+def load_rubric() -> dict:
+    with open(settings.rubric_path) as f:
+        return yaml.safe_load(f)
+
+
+def load_company_facts() -> str:
+    with open(settings.company_facts_path) as f:
+        return f.read()
+
+
+RUBRIC = load_rubric()
+COMPANY_FACTS = load_company_facts()
+
+
+# ---------------------------------------------------------------------------
+# Pydantic models — shared
+# ---------------------------------------------------------------------------
+
+class Turn(BaseModel):
+    speaker: str
+    start: float
+    end: float
+    text: str
+
+
+class TranscriptOut(BaseModel):
+    call_id: str
+    duration_sec: float
+    turns: list[Turn]
+    engine: str = "deepgram"
+
+
+# ---------------------------------------------------------------------------
+# WhisperX engine
+# ---------------------------------------------------------------------------
+
+_whisperx_model = None  # lazy-loaded
+
+
+def _get_whisperx_model():
+    """Lazy-load WhisperX model to avoid startup delay."""
+    global _whisperx_model
+    if _whisperx_model is None:
+        import whisperx
+        device = "cuda" if torch.cuda.is_available() else "cpu"
+        log.info(f"Loading WhisperX model={settings.whisperx_model} device={device} compute={settings.whisperx_compute_type}")
+        _whisperx_model = whisperx.load_model(
+            settings.whisperx_model,
+            device,
+            compute_type=settings.whisperx_compute_type,
+        )
+        log.info("WhisperX model loaded ✓")
+    return _whisperx_model
+
+
+def transcribe_whisperx(audio_path: str) -> tuple[list[Turn], float]:
+    """Run WhisperX transcription + alignment + pyannote diarization."""
+    import whisperx
+
+    device = "cuda" if torch.cuda.is_available() else "cpu"
+    model = _get_whisperx_model()
+
+    t0 = time.time()
+
+    # 1. Transcribe
+    audio = whisperx.load_audio(audio_path)
+    result = model.transcribe(audio, batch_size=settings.whisperx_batch_size)
+    lang = result.get("language", "en")
+    log.info(f"WhisperX transcribe done in {time.time() - t0:.1f}s — lang={lang}, segments={len(result['segments'])}")
+
+    # 2. Align word-level timestamps
+    t1 = time.time()
+    model_a, metadata = whisperx.load_align_model(language_code=lang, device=device)
+    result = whisperx.align(
+        result["segments"], model_a, metadata, audio, device,
+        return_char_alignments=False,
+    )
+    log.info(f"WhisperX align done in {time.time() - t1:.1f}s")
+
+    # Free alignment model memory
+    del model_a
+    torch.cuda.empty_cache()
+
+    # 3. Diarize with pyannote
+    t2 = time.time()
+    hf_token = settings.hf_token
+    if not hf_token:
+        log.warning("HF_TOKEN not set — skipping diarization, all speakers will be 'SPEAKER_00'")
+        turns = []
+        for seg in result["segments"]:
+            turns.append(Turn(
+                speaker="SPEAKER_00",
+                start=round(seg["start"], 2),
+                end=round(seg["end"], 2),
+                text=seg["text"].strip(),
+            ))
+        duration = turns[-1].end if turns else 0.0
+        return turns, duration
+
+    diarize_model = whisperx.DiarizationPipeline(use_auth_token=hf_token, device=device)
+    diarize_segments = diarize_model(audio)
+    result = whisperx.assign_word_speakers(diarize_segments, result)
+    log.info(f"WhisperX diarize done in {time.time() - t2:.1f}s")
+    log.info(f"WhisperX total pipeline: {time.time() - t0:.1f}s")
+
+    # Build turns
+    turns = []
+    for seg in result["segments"]:
+        speaker = seg.get("speaker", "UNKNOWN")
+        turns.append(Turn(
+            speaker=speaker,
+            start=round(seg["start"], 2),
+            end=round(seg["end"], 2),
+            text=seg["text"].strip(),
+        ))
+
+    duration = turns[-1].end if turns else 0.0
+    return turns, duration
+
+
+# ---------------------------------------------------------------------------
+# Deepgram engine
+# ---------------------------------------------------------------------------
+
+def transcribe_deepgram(raw_bytes: bytes) -> tuple[list[Turn], float, dict]:
+    """Run Deepgram Nova-2-phonecall transcription with diarization."""
+    dg = DeepgramClient(api_key=settings.deepgram_api_key)
+
+    response = dg.listen.v1.media.transcribe_file(
+        request=raw_bytes,
+        model="nova-2-phonecall",
+        smart_format=True,
+        diarize_model="latest",
+        utterances=True,
+        language="en",
+    )
+
+    result = response.results
+
+    # Duration
+    duration = 0.0
+    if result.channels and result.channels[0].alternatives:
+        words = result.channels[0].alternatives[0].words
+        if words:
+            duration = words[-1].end
+
+    # Build turns from utterances
+    turns: list[Turn] = []
+    if result.utterances:
+        for utt in result.utterances:
+            turns.append(Turn(
+                speaker=f"speaker_{utt.speaker}",
+                start=utt.start,
+                end=utt.end,
+                text=utt.transcript,
+            ))
+    else:
+        alt = result.channels[0].alternatives[0]
+        turns.append(Turn(
+            speaker="unknown",
+            start=0.0,
+            end=duration,
+            text=alt.transcript,
+        ))
+
+    return turns, duration, response
+
+
+# ---------------------------------------------------------------------------
+# Endpoint 1: /transcribe
+# ---------------------------------------------------------------------------
+
+@app.post("/transcribe", response_model=TranscriptOut)
+async def transcribe(
+    file: UploadFile,
+    engine: str = Query("deepgram", enum=["deepgram", "whisperx"]),
+):
+    # --- validate extension ---
+    ext = file.filename.rsplit(".", 1)[-1].lower() if file.filename else ""
+    if ext not in settings.allowed_extensions:
+        raise HTTPException(400, f"Unsupported format '{ext}'. Allowed: {settings.allowed_extensions}")
+
+    # --- save to disk ---
+    call_id = str(uuid.uuid4())
+    upload_path = settings.upload_dir / f"{call_id}.{ext}"
+    raw_bytes = await file.read()
+    upload_path.write_bytes(raw_bytes)
+    log.info(f"Saved upload → {upload_path} ({len(raw_bytes)} bytes)")
+
+    # --- route to engine ---
+    if engine == "whisperx":
+        log.info("Using WhisperX engine")
+        try:
+            turns, duration = transcribe_whisperx(str(upload_path))
+        except Exception as e:
+            log.error(f"WhisperX error: {e}", exc_info=True)
+            raise HTTPException(502, f"WhisperX transcription failed: {e}")
+    else:
+        log.info("Using Deepgram engine")
+        try:
+            turns, duration, response = transcribe_deepgram(raw_bytes)
+        except Exception as e:
+            log.error(f"Deepgram error: {e}")
+            raise HTTPException(502, f"Transcription failed: {e}")
+
+        # Log raw Deepgram response
+        log.info("═" * 60)
+        log.info("DEEPGRAM RAW RESPONSE:")
+        log.info("═" * 60)
+        try:
+            raw_json = response.to_dict() if hasattr(response, 'to_dict') else response.__dict__
+            log.info(json.dumps(raw_json, indent=2, default=str))
+        except Exception:
+            log.info(str(response))
+        log.info("═" * 60)
+
+    # --- duration check ---
+    if duration < settings.min_duration_sec:
+        raise HTTPException(
+            422,
+            f"Audio too short ({duration:.1f}s). Minimum {settings.min_duration_sec}s — likely a misdial.",
+        )
+
+    transcript = TranscriptOut(
+        call_id=call_id,
+        duration_sec=round(duration, 2),
+        turns=turns,
+        engine=engine,
+    )
+
+    # --- save transcript JSON ---
+    out_path = settings.transcripts_dir / f"{call_id}.json"
+    out_path.write_text(transcript.model_dump_json(indent=2))
+    log.info(f"Transcript saved → {out_path}")
+
+    # --- save readable .txt ---
+    txt_path = settings.transcripts_dir / f"{call_id}.txt"
+    lines = [f"Call ID: {call_id}", f"Duration: {duration:.1f}s", f"Engine: {engine}", ""]
+    for t in turns:
+        lines.append(f"[{t.start:.1f}s – {t.end:.1f}s] {t.speaker}: {t.text}")
+    txt_path.write_text("\n".join(lines))
+    log.info(f"Readable transcript → {txt_path}")
+
+    return transcript
+
+
+# ---------------------------------------------------------------------------
+# Endpoint 2: /flag — LangChain structured output
+# ---------------------------------------------------------------------------
+
+class IssueTag(str, Enum):
+    no_needs_discovery = "no_needs_discovery"
+    overpromising = "overpromising"
+    pressure_or_urgency_tactics = "pressure_or_urgency_tactics"
+    price_before_value = "price_before_value"
+    undisclosed_costs = "undisclosed_costs"
+    weak_or_missing_trial_booking = "weak_or_missing_trial_booking"
+    talking_over_customer = "talking_over_customer"
+
+
+class Flag(BaseModel):
+    """A single issue flag extracted from the call transcript."""
+    tag: IssueTag = Field(description="Issue type — must be from the fixed taxonomy")
+    severity: Literal["low", "medium", "high"] = Field(description="How serious this issue is")
+    quoted_line: str = Field(description="Exact verbatim quote from the transcript that shows this issue")
+    reason: str = Field(description="One-sentence explanation of why this is flagged")
+    timestamp: float = Field(description="Start time (seconds) of the turn containing this quote")
+
+
+class Scores(BaseModel):
+    """Call quality scores across 5 rubric dimensions, each 0-5."""
+    needs_discovery: int = Field(ge=0, le=5)
+    product_knowledge: int = Field(ge=0, le=5)
+    objection_handling: int = Field(ge=0, le=5)
+    compliance: int = Field(ge=0, le=5)
+    next_step_booking: int = Field(ge=0, le=5)
+
+
+class CallAnalysis(BaseModel):
+    """Complete structured analysis of a sales call."""
+    scores: Scores = Field(description="Quality scores per rubric dimension")
+    flags: list[Flag] = Field(description="Issues found in the call — only from the fixed taxonomy")
+
+
+class FlagRequest(BaseModel):
+    call_id: Optional[str] = None
+    transcript: Optional[TranscriptOut] = None
+
+
+class FlaggedFlag(BaseModel):
+    tag: str
+    severity: str
+    quoted_line: str
+    reason: str
+    timestamp: float
+    match_score: Optional[float] = None
+
+
+class FlagResponse(BaseModel):
+    call_id: str
+    scores: dict
+    overall_score: float
+    flags: list[FlaggedFlag]
+    discarded_flags: list[FlaggedFlag]
+
+
+def build_transcript_text(turns: list[Turn]) -> str:
+    """Flatten turns into a single string for matching."""
+    return "\n".join(
+        f"[{t.start:.1f}s] {t.speaker}: {t.text}" for t in turns
+    )
+
+
+def verify_quote(quote: str, full_text: str) -> float:
+    """Fuzzy match a quoted line against the full transcript. Returns best score."""
+    lines = full_text.split("\n")
+    best = 0.0
+    for line in lines:
+        score = fuzz.partial_ratio(quote.lower(), line.lower())
+        best = max(best, score)
+    return best
+
+
+def build_rubric_prompt() -> str:
+    """Format the rubric YAML into a readable prompt section."""
+    parts = []
+    for dim, info in RUBRIC["dimensions"].items():
+        parts.append(f"\n### {dim}")
+        parts.append(info["description"])
+        parts.append("Scoring guide:")
+        for score, desc in info["scoring"].items():
+            parts.append(f"  {score}: {desc}")
+        if "example_good" in info:
+            parts.append(f"Good example:\n{info['example_good'].strip()}")
+        if "example_bad" in info:
+            parts.append(f"Bad example:\n{info['example_bad'].strip()}")
+    return "\n".join(parts)
+
+
+@app.post("/flag", response_model=FlagResponse)
+async def flag_call(req: FlagRequest):
+    # --- resolve transcript ---
+    if req.transcript:
+        transcript = req.transcript
+    elif req.call_id:
+        path = settings.transcripts_dir / f"{req.call_id}.json"
+        if not path.exists():
+            raise HTTPException(404, f"No transcript found for call_id={req.call_id}")
+        transcript = TranscriptOut.model_validate_json(path.read_text())
+    else:
+        raise HTTPException(400, "Provide either 'transcript' or 'call_id'")
+
+    full_text = build_transcript_text(transcript.turns)
+
+    # --- build prompt ---
+    system_prompt = f"""You are a quality analyst for FitNova, a fitness coaching company.
+You will analyze a sales call transcript and:
+1. Score the call on 5 rubric dimensions (0-5 each)
+2. Flag any issues from the FIXED taxonomy — do NOT invent new tags
+
+COMPANY FACTS (use this as ground truth for accuracy checks):
+{COMPANY_FACTS}
+
+SCORING RUBRIC:
+{build_rubric_prompt()}
+
+ISSUE TAG TAXONOMY (only these tags are valid):
+- no_needs_discovery: Advisor didn't ask about customer needs/goals before pitching
+- overpromising: Advisor made guarantees about results (e.g. "guaranteed weight loss")
+- pressure_or_urgency_tactics: Advisor used artificial urgency or pressure to close
+- price_before_value: Advisor discussed pricing before establishing value/needs
+- undisclosed_costs: Advisor hid or failed to mention relevant costs
+- weak_or_missing_trial_booking: Advisor didn't attempt to book the free trial
+- talking_over_customer: Advisor interrupted or didn't let the customer speak
+
+CRITICAL RULES:
+- quoted_line MUST be an exact verbatim quote from the transcript — copy-paste, do not paraphrase
+- timestamp must match the turn's start time from the transcript
+- Only flag issues you can directly support with a quote from the transcript
+- If the call is clean, return an empty flags list — do not force flags"""
+
+    human_prompt = f"""Analyze this sales call transcript:
+
+{full_text}"""
+
+    # --- LLM call with structured output ---
+    llm = ChatGoogleGenerativeAI(
+        model="gemini-3.5-flash",
+        temperature=0,
+        google_api_key=settings.google_api_key,
+    )
+    structured_llm = llm.with_structured_output(CallAnalysis)
+
+    try:
+        analysis: CallAnalysis = structured_llm.invoke([
+            SystemMessage(content=system_prompt),
+            HumanMessage(content=human_prompt),
+        ])
+    except Exception as e:
+        log.error(f"LLM error: {e}")
+        raise HTTPException(502, f"Analysis failed: {e}")
+
+    # --- post-processing: verify quotes with rapidfuzz ---
+    verified_flags: list[FlaggedFlag] = []
+    discarded_flags: list[FlaggedFlag] = []
+
+    for f in analysis.flags:
+        match_score = verify_quote(f.quoted_line, full_text)
+        flagged = FlaggedFlag(
+            tag=f.tag.value,
+            severity=f.severity,
+            quoted_line=f.quoted_line,
+            reason=f.reason,
+            timestamp=f.timestamp,
+            match_score=round(match_score, 1),
+        )
+
+        if match_score >= settings.quote_match_threshold:
+            verified_flags.append(flagged)
+        else:
+            log.warning(
+                f"Discarded hallucinated flag: tag={f.tag.value}, "
+                f"match_score={match_score:.1f}, quote='{f.quoted_line[:60]}...'"
+            )
+            discarded_flags.append(flagged)
+
+    # --- compute overall score ---
+    scores_dict = analysis.scores.model_dump()
+    overall = sum(scores_dict.values()) / len(scores_dict)
+
+    return FlagResponse(
+        call_id=transcript.call_id,
+        scores=scores_dict,
+        overall_score=round(overall, 2),
+        flags=verified_flags,
+        discarded_flags=discarded_flags,
+    )
+
+
+# ---------------------------------------------------------------------------
+# Run
+# ---------------------------------------------------------------------------
+
+if __name__ == "__main__":
+    uvicorn.run("app:app", host=settings.host, port=settings.port, reload=True)
