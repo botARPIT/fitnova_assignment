@@ -60,7 +60,6 @@ class TranscriptionService:
             f"WhisperX transcribe done in {time.time() - t0:.1f}s — "
             f"lang={lang}, segments={len(result['segments'])}"
         )
-
         # 2. Align word-level timestamps
         t1 = time.time()
         model_a, metadata = whisperx.load_align_model(language_code=lang, device=device)
@@ -91,7 +90,8 @@ class TranscriptionService:
             duration = turns[-1].end if turns else 0.0
             return turns, duration
 
-        diarize_model = whisperx.DiarizationPipeline(use_auth_token=hf_token, device=device)
+        from whisperx.diarize import DiarizationPipeline
+        diarize_model = DiarizationPipeline(token=hf_token, device=device)
         diarize_segments = diarize_model(audio)
         result = whisperx.assign_word_speakers(diarize_segments, result)
         log.info(f"WhisperX diarize done in {time.time() - t2:.1f}s")
@@ -117,11 +117,11 @@ class TranscriptionService:
 
         response = dg.listen.v1.media.transcribe_file(
             request=raw_bytes,
-            model="nova-2-phonecall",
+            model="nova-3",
             smart_format=True,
             diarize_model="latest",
             utterances=True,
-            language="en",
+            detect_language=True,
         )
 
         result = response.results

@@ -15,8 +15,8 @@ class Settings:
 
     # WhisperX settings
     whisperx_model: str = os.getenv("WHISPERX_MODEL", "small")  # tiny/base/small
-    whisperx_batch_size: int = int(os.getenv("WHISPERX_BATCH_SIZE", "4"))
-    whisperx_compute_type: str = os.getenv("WHISPERX_COMPUTE_TYPE", "float16")
+    whisperx_batch_size: int = int(os.getenv("WHISPERX_BATCH_SIZE", "1"))
+    whisperx_compute_type: str = os.getenv("WHISPERX_COMPUTE_TYPE", "int8")
 
     host: str = os.getenv("HOST", "0.0.0.0")
     port: int = int(os.getenv("PORT", "8000"))
