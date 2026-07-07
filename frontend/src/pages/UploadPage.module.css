@@ -1,0 +1,293 @@
+.page {
+  max-width: 640px;
+}
+
+.title {
+  font-size: 1.4rem;
+  font-weight: 700;
+  margin-bottom: 24px;
+  letter-spacing: -0.02em;
+}
+
+.errorBanner {
+  margin-bottom: 16px;
+  background: rgba(239, 68, 68, 0.05);
+  border: 1px solid rgba(239, 68, 68, 0.15);
+  border-radius: 12px;
+  padding: 8px;
+}
+
+.progressSection {
+  padding: 32px;
+  background: var(--surface);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  text-align: center;
+}
+
+.progressBar {
+  height: 4px;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 2px;
+  overflow: hidden;
+  margin: 20px 0 12px;
+}
+
+.progressFill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent), #a78bfa);
+  border-radius: 2px;
+  transition: width 0.5s ease;
+}
+
+.progressText {
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.resultSection {
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.resultInfo {
+  display: flex;
+  justify-content: center;
+  gap: 24px;
+  font-size: 0.9rem;
+  color: var(--text);
+  margin-bottom: 16px;
+}
+
+.resultActions {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+}
+
+.engineSelector {
+  margin-bottom: 20px;
+}
+
+.engineLabel {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+
+.engineOptions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.engineBtn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  cursor: pointer;
+  text-align: left;
+  color: var(--muted);
+  transition: all 0.2s ease;
+  font-family: inherit;
+}
+
+.engineBtn:hover {
+  border-color: rgba(99, 102, 241, 0.4);
+}
+
+.engineActive {
+  border-color: var(--accent);
+  background: rgba(99, 102, 241, 0.1);
+  color: var(--text);
+}
+
+.engineIcon {
+  font-size: 1.4rem;
+  flex-shrink: 0;
+}
+
+.engineBtn strong {
+  display: block;
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+.engineBtn small {
+  font-size: 0.7rem;
+  color: var(--muted);
+}
+
+.dropZone {
+  border: 2px dashed rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 48px 20px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.dropZone:hover,
+.dragOver {
+  border-color: var(--accent);
+  background: rgba(99, 102, 241, 0.05);
+}
+
+.dropZone svg {
+  color: var(--muted);
+  margin-bottom: 12px;
+}
+
+.dropZone:hover svg {
+  color: var(--accent);
+}
+
+.dropZone p {
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.dropZone p strong {
+  color: var(--accent);
+}
+
+.formats {
+  font-size: 0.75rem !important;
+  margin-top: 6px;
+}
+
+.fileInfo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 18px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  margin-top: 16px;
+}
+
+.fileIcon {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  background: rgba(99, 102, 241, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--accent);
+  flex-shrink: 0;
+}
+
+.fileDetails {
+  flex: 1;
+  min-width: 0;
+}
+
+.fileName {
+  font-size: 0.85rem;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.fileSize {
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+
+.removeBtn {
+  background: none;
+  border: none;
+  color: var(--muted);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  font-size: 1rem;
+}
+
+.removeBtn:hover {
+  color: var(--error);
+}
+
+.uploadOptions {
+  margin-top: 16px;
+}
+
+.advisorInput {
+  width: 100%;
+  padding: 10px 14px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  color: var(--text);
+  font-family: inherit;
+  font-size: 0.85rem;
+}
+
+.advisorInput:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.advisorInput::placeholder {
+  color: var(--muted);
+}
+
+.actions {
+  margin-top: 20px;
+}
+
+.primaryBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 28px;
+  border-radius: 8px;
+  border: none;
+  background: var(--accent);
+  color: white;
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+  font-family: inherit;
+}
+
+.primaryBtn:hover:not(:disabled) {
+  opacity: 0.9;
+}
+
+.primaryBtn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.secondaryBtn {
+  padding: 12px 28px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: transparent;
+  color: var(--text);
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-family: inherit;
+}
+
+.secondaryBtn:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.2);
+}

@@ -1,0 +1,162 @@
+.page {
+  max-width: 1000px;
+}
+
+.title {
+  font-size: 1.4rem;
+  font-weight: 700;
+  margin-bottom: 24px;
+  letter-spacing: -0.02em;
+}
+
+.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 14px;
+  margin-bottom: 28px;
+}
+
+.card {
+  padding: 20px;
+  background: var(--surface);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+}
+
+.cardLabel {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+
+.cardValue {
+  font-size: 1.8rem;
+  font-weight: 700;
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--text);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  margin-bottom: 28px;
+}
+
+@media (max-width: 768px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.section {
+  background: var(--surface);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 20px;
+}
+
+.sectionTitle {
+  font-size: 0.9rem;
+  font-weight: 600;
+  margin-bottom: 16px;
+  color: var(--text);
+}
+
+.flagList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.flagRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 8px;
+}
+
+.flagTag {
+  font-size: 0.8rem;
+  color: var(--text);
+}
+
+.flagCount {
+  font-size: 0.8rem;
+  font-weight: 700;
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--accent);
+}
+
+.callTable {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.callHeader,
+.callRow {
+  display: grid;
+  grid-template-columns: 1.5fr 1fr 1fr 1fr 0.8fr;
+  gap: 12px;
+  padding: 12px 18px;
+  background: var(--surface);
+  align-items: center;
+  font-size: 0.84rem;
+}
+
+.callHeader {
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.callRow {
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.callRow:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.status {
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 4px;
+  text-transform: capitalize;
+  text-align: center;
+  width: fit-content;
+}
+
+.completed {
+  background: rgba(34, 197, 94, 0.1);
+  color: var(--success);
+}
+
+.processing {
+  background: rgba(245, 158, 11, 0.1);
+  color: var(--warning);
+}
+
+.failed {
+  background: rgba(239, 68, 68, 0.1);
+  color: var(--error);
+}
+
+.scoreCell {
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 600;
+}

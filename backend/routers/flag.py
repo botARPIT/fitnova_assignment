@@ -40,6 +40,8 @@ async def flag_call(req: FlagRequest, request: Request):
             google_api_key=settings.google_api_key,
             quote_match_threshold=settings.quote_match_threshold,
         )
+    except ValueError as e:
+        raise HTTPException(422, str(e))
     except RuntimeError as e:
         raise HTTPException(502, str(e))
 

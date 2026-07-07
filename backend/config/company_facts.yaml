@@ -1,0 +1,63 @@
+# FitNova Company Facts — ground truth for compliance checking
+# These facts are injected into the LLM context to detect inaccuracies
+
+company:
+  name: "FitNova"
+  tagline: "AI-Powered Fitness Transformation"
+  type: "Online and Offline Fitness Coaching Platform"
+
+plans:
+  basic:
+    name: "Basic"
+    price_monthly: 4999  # INR
+    sessions_per_week: 3
+    features:
+      - "Group workout sessions (max 10 per batch)"
+      - "Basic nutrition guidelines"
+      - "Weekly progress check-in"
+    coach_type: "Shared group coach"
+    trial: "7-day free trial available"
+
+  pro:
+    name: "Pro"
+    price_monthly: 9999  # INR
+    sessions_per_week: 5
+    features:
+      - "1-on-1 dedicated coach"
+      - "Custom nutrition plan"
+      - "Progress tracking dashboard"
+      - "WhatsApp support from coach"
+    coach_type: "Dedicated 1-on-1 coach"
+    trial: "7-day free trial available"
+
+  elite:
+    name: "Elite"
+    price_monthly: 17999  # INR
+    sessions_per_week: 7
+    features:
+      - "Daily 1-on-1 sessions"
+      - "Dedicated nutritionist"
+      - "Physiotherapy consultation"
+      - "Priority support 24/7"
+      - "Body composition analysis monthly"
+    coach_type: "Dedicated coach + nutritionist"
+    trial: "7-day free trial available"
+
+policies:
+  - "All plans come with a 7-day free trial — no credit card required"
+  - "No long-term contracts — month-to-month billing"
+  - "EMI options available on Pro and Elite plans (3 or 6 months)"
+  - "Results vary — advisors must NOT guarantee specific weight loss numbers"
+  - "No guaranteed results claims allowed"
+  - "Refund available within 48 hours of subscription start"
+  - "Session recordings are stored for quality assurance"
+
+locations:
+  - "Koramangala, Bangalore"
+  - "Indiranagar, Bangalore"
+  - "Online (pan-India)"
+
+working_hours:
+  weekdays: "6 AM – 10 PM"
+  weekends: "7 AM – 8 PM"
+  timezone: "IST"

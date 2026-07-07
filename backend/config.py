@@ -24,13 +24,20 @@ class Settings:
 
     base_dir: Path = Path(__file__).parent
     rubric_path: Path = base_dir / "config" / "rubric.yaml"
-    company_facts_path: Path = base_dir / "config" / "company_facts.txt"
+    company_facts_path: Path = base_dir / "config" / "company_facts.yaml"
     transcripts_dir: Path = Path("/tmp/transcripts")
     upload_dir: Path = Path("/tmp/uploads")
 
+    database_url: str = os.getenv("DATABASE_URL", "postgresql://fitnova:fitnova_dev@localhost:5432/fitnova")
+
     allowed_extensions: frozenset[str] = frozenset({"wav", "mp3", "m4a"})
-    min_duration_sec: int = 10
-    quote_match_threshold: int = 85
+    min_duration_sec: float = float(os.getenv("MIN_DURATION_SEC", "10"))
+    quote_match_threshold: float = float(os.getenv("QUOTE_MATCH_THRESHOLD", "0.6"))
+    default_org_id: str = os.getenv("DEFAULT_ORG_ID", "00000000-0000-0000-0000-000000000001")
+
+    rubric_version: str = os.getenv("RUBRIC_VERSION", "1.0")
+    company_facts_version: str = os.getenv("COMPANY_FACTS_VERSION", "1.0")
+    analysis_version: str = os.getenv("ANALYSIS_VERSION", "1.0")
 
     def __init__(self) -> None:
         if not self.deepgram_api_key:

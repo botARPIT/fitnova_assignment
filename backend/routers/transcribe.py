@@ -8,6 +8,7 @@ from fastapi import APIRouter, UploadFile, Query, HTTPException, Request
 
 from schemas.transcript import TranscriptOut
 from utils.audio import validate_extension
+from guardrails.input_guards import validate_audio_input, validate_stt_output
 
 log = logging.getLogger("fitnova.routes.transcribe")
 
@@ -34,6 +35,11 @@ async def transcribe(
     # ── Save upload ────────────────────────────────────────────
     call_id = str(uuid.uuid4())
     raw_bytes = await file.read()
+
+    # ── GUARD: Validate audio input (size, magic bytes) ────────
+    audio_check = validate_audio_input(file.filename, raw_bytes)
+    if not audio_check.ok:
+        raise HTTPException(422, audio_check.reason)
     upload_path = store.save_upload(call_id, ext, raw_bytes)
 
     # ── Route to engine ────────────────────────────────────────
@@ -63,13 +69,14 @@ async def transcribe(
             log.info(str(response))
         log.info("═" * 60)
 
-    # ── Duration check ─────────────────────────────────────────
-    if duration < settings.min_duration_sec:
-        raise HTTPException(
-            422,
-            f"Audio too short ({duration:.1f}s). "
-            f"Minimum {settings.min_duration_sec}s — likely a misdial.",
-        )
+    # ── GUARD: Validate STT output ──────────────────────────────
+    stt_check = validate_stt_output(
+        turns=turns,
+        duration=duration,
+        min_duration_sec=settings.min_duration_sec,
+    )
+    if not stt_check.ok:
+        raise HTTPException(422, stt_check.reason)
 
     transcript = TranscriptOut(
         call_id=call_id,
