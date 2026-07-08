@@ -173,12 +173,18 @@ class TranscriptionService:
         The Deepgram API call is wrapped in retry logic for transient failures.
         Transcript parsing is excluded from the retry boundary.
         """
+        if self._settings.is_dev:
+            log.info("[DEV] Deepgram transcribe_deepgram called, size=%d bytes, model=%s",
+                     len(raw_bytes), self._settings.deepgram_model)
+
         dg = DeepgramClient(api_key=self._settings.deepgram_api_key)
 
         max_retries = getattr(self._settings, "deepgram_max_retries", 3)
         base_delay = getattr(self._settings, "retry_base_delay_ms", 1000) / 1000.0
 
         async def _call_deepgram():
+            if self._settings.is_dev:
+                log.info("[DEV] Calling asyncio.to_thread -> dg.listen.v1.media.transcribe_file")
             return await asyncio.to_thread(
                 dg.listen.v1.media.transcribe_file,
                 request=raw_bytes,
@@ -189,14 +195,28 @@ class TranscriptionService:
                 detect_language=self._settings.deepgram_detect_language,
             )
 
-        response = await retry_async(
-            operation=_call_deepgram,
-            is_retryable=is_deepgram_retryable,
-            max_attempts=max_retries,
-            base_delay=base_delay,
-            vendor="deepgram",
-            operation_name="transcription",
-        )
+        t0 = time.time()
+        if self._settings.is_dev:
+            heartbeat_task = asyncio.create_task(self._deepgram_heartbeat(t0))
+        else:
+            heartbeat_task = None
+
+        try:
+            response = await retry_async(
+                operation=_call_deepgram,
+                is_retryable=is_deepgram_retryable,
+                max_attempts=max_retries,
+                base_delay=base_delay,
+                vendor="deepgram",
+                operation_name="transcription",
+            )
+        finally:
+            if heartbeat_task:
+                heartbeat_task.cancel()
+
+        elapsed = time.time() - t0
+        if self._settings.is_dev:
+            log.info("[DEV] Deepgram transcription succeeded in %.1fs", elapsed)
 
         result = response.results
 
@@ -234,6 +254,14 @@ class TranscriptionService:
         )
 
         return turns, duration, response
+
+    async def _deepgram_heartbeat(self, t0: float) -> None:
+        """Log periodic heartbeat while Deepgram transcription is running (dev only)."""
+        intervals = [30, 60, 120, 180, 300]
+        for interval in intervals:
+            await asyncio.sleep(interval)
+            elapsed = time.time() - t0
+            log.info("[DEV] Deepgram transcription still running after %.0fs...", elapsed)
 
     # ── Lifecycle ──────────────────────────────────────────────
 

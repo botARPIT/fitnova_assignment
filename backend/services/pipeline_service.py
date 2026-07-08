@@ -171,18 +171,62 @@ class PipelineService:
         started_at = time.time()
         pool = await get_pool()
 
+        if app_settings.is_dev:
+            log.info("[DEV] Background task started for call %s", ctx.call_id)
+
         try:
+            if app_settings.is_dev:
+                log.info("[DEV] Stage TRANSCRIPTION starting for call %s", ctx.call_id)
             await self._run_transcription(pool, ctx, raw_bytes)
+            if app_settings.is_dev:
+                log.info("[DEV] Stage TRANSCRIPTION completed for call %s (%.1fs)", ctx.call_id, ctx.timings.stt_ms / 1000 if ctx.timings.stt_ms else 0)
+
+            if app_settings.is_dev:
+                log.info("[DEV] Stage VALIDATE_TRANSCRIPTION starting for call %s", ctx.call_id)
             await self._validate_transcription_output(pool, ctx)
+            if app_settings.is_dev:
+                log.info("[DEV] Stage VALIDATE_TRANSCRIPTION passed for call %s", ctx.call_id)
+
+            if app_settings.is_dev:
+                log.info("[DEV] Stage SPEAKER_REPAIR starting for call %s", ctx.call_id)
             await self._run_speaker_repair(pool, ctx)
+            if app_settings.is_dev:
+                log.info("[DEV] Stage SPEAKER_REPAIR completed for call %s (%.1fs)", ctx.call_id, ctx.timings.repair_ms / 1000 if ctx.timings.repair_ms else 0)
+
+            if app_settings.is_dev:
+                log.info("[DEV] Stage VALIDATE_CONVERSATION starting for call %s", ctx.call_id)
             await self._validate_repaired_conversation(pool, ctx)
+            if app_settings.is_dev:
+                log.info("[DEV] Stage VALIDATE_CONVERSATION passed for call %s", ctx.call_id)
+
+            if app_settings.is_dev:
+                log.info("[DEV] Stage VALIDATE_ANALYSIS_INPUT starting for call %s", ctx.call_id)
             await self._validate_analysis_input(pool, ctx)
+            if app_settings.is_dev:
+                log.info("[DEV] Stage VALIDATE_ANALYSIS_INPUT passed for call %s", ctx.call_id)
+
+            if app_settings.is_dev:
+                log.info("[DEV] Stage ANALYSIS starting for call %s", ctx.call_id)
             await self._run_analysis(pool, ctx)
+            if app_settings.is_dev:
+                log.info("[DEV] Stage ANALYSIS completed for call %s (%.1fs)", ctx.call_id, ctx.timings.analysis_ms / 1000 if ctx.timings.analysis_ms else 0)
+
+            if app_settings.is_dev:
+                log.info("[DEV] Stage FINALIZE_FLAGS starting for call %s", ctx.call_id)
             self._finalize_flags(ctx)
+            if app_settings.is_dev:
+                log.info("[DEV] Stage FINALIZE_FLAGS done for call %s", ctx.call_id)
+
+            if app_settings.is_dev:
+                log.info("[DEV] Stage SET_METADATA for call %s", ctx.call_id)
             self._set_metadata(ctx)
 
             ctx.timings.total_ms = int((time.time() - started_at) * 1000)
+            if app_settings.is_dev:
+                log.info("[DEV] Stage PERSIST_RESULTS starting for call %s", ctx.call_id)
             await self._persist_results(pool, ctx)
+            if app_settings.is_dev:
+                log.info("[DEV] Stage PERSIST_RESULTS completed for call %s (total %.1fs)", ctx.call_id, ctx.timings.total_ms / 1000)
         except (AudioValidationError, IngestionError, TranscriptionError,
                 SpeakerRepairError, ConversationValidationError, AnalysisError,
                 PersistenceError):
@@ -210,6 +254,8 @@ class PipelineService:
 
     def schedule_submitted_call(self, ctx: PipelineContext, raw_bytes: bytes) -> None:
         """Schedule background execution for an already-submitted call."""
+        if app_settings.is_dev:
+            log.info("[DEV] Scheduling background task for call %s", ctx.call_id)
         asyncio.create_task(self.process_submitted_call(ctx, raw_bytes))
 
     def _build_context(

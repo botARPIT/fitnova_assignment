@@ -27,6 +27,7 @@ export function normalizeCallDetail(call) {
 
   return {
     ...call,
+    call_id: call.call_id ?? call.id,
     raw_transcript: rawTurns,
     diarized_transcript: diarizedTurns,
     turns: diarizedTurns.length > 0 ? diarizedTurns : rawTurns,
