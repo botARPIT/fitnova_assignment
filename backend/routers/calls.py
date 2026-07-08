@@ -5,8 +5,6 @@ import mimetypes
 from fastapi import APIRouter, HTTPException, Query, Request, UploadFile
 from fastapi.responses import FileResponse
 
-from errors import CallConflictError
-
 router = APIRouter(prefix="/api/calls", tags=["calls"])
 
 
@@ -19,25 +17,14 @@ async def upload_call(
 ):
     """Submit a call for background processing or return a reused result."""
     pipeline = request.app.state.pipeline_service
-    try:
-        result, ctx, raw_bytes = await pipeline.submit_call(
-            file=file,
-            advisor_id=advisor_id,
-            organization_id=organization_id,
-        )
-        if ctx and raw_bytes:
-            pipeline.schedule_submitted_call(ctx, raw_bytes)
-        return result
-    except CallConflictError as e:
-        raise HTTPException(
-            status_code=409,
-            detail={
-                "call_id": e.call_id,
-                "status": "processing",
-                "idempotent_reuse": False,
-                "reused": False,
-            },
-        )
+    result, ctx, raw_bytes = await pipeline.submit_call(
+        file=file,
+        advisor_id=advisor_id,
+        organization_id=organization_id,
+    )
+    if ctx and raw_bytes:
+        pipeline.schedule_submitted_call(ctx, raw_bytes)
+    return result
 
 
 @router.get("")

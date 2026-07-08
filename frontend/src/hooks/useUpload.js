@@ -91,7 +91,7 @@ export function useUpload() {
       setResult(data)
     } catch (e) {
       const detail = e.detail
-      if (detail && detail.status === 'processing' && detail.call_id) {
+      if (detail && detail.component === 'call_conflict' && detail.call_id) {
         setStage('processing')
         await startPolling(detail.call_id)
         return

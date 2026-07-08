@@ -37,7 +37,7 @@ async function request(path, options = {}) {
 
   if (!res.ok) {
     const detail = isJson
-      ? body?.detail || res.statusText
+      ? body || res.statusText
       : `Expected JSON API response from ${url}, received ${contentType || 'non-JSON response'}`
     throw new ApiError(res.status, detail)
   }

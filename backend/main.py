@@ -8,21 +8,14 @@ from contextlib import asynccontextmanager
 
 import yaml
 import uvicorn
-from fastapi import FastAPI, Request
-from fastapi.exceptions import RequestValidationError
-from fastapi.responses import JSONResponse
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from config import settings
 from db.connection import init_pool, close_pool
 from db import run_migrations
-from logging_config import configure_logging, safe_exception_text
-from errors import (
-    AudioValidationError, IngestionError, TranscriptionError,
-    SpeakerRepairError, ConversationValidationError, AnalysisError,
-    PersistenceError, PipelineError, CallConflictError,
-    ReviewError, ReviewPermissionError, ReviewNotFoundError,
-)
+from logging_config import configure_logging
+from error_middleware import register_error_handlers
 from services.call_service import CallService
 from services.pipeline_service import PipelineService
 from services.analytics_service import AnalyticsService
@@ -49,59 +42,6 @@ def load_rubric() -> dict:
 def load_company_facts() -> dict:
     with open(settings.company_facts_path) as f:
         return yaml.safe_load(f)
-
-
-# ---------------------------------------------------------------------------
-# Error handlers
-# ---------------------------------------------------------------------------
-
-HANDLED_ERRORS = [
-    (AudioValidationError, 422),
-    (IngestionError, 500),
-    (TranscriptionError, 502),
-    (SpeakerRepairError, 502),
-    (ConversationValidationError, 422),
-    (AnalysisError, 502),
-    (PersistenceError, 500),
-    (CallConflictError, 409),
-    (ReviewError, 400),
-    (ReviewPermissionError, 403),
-    (ReviewNotFoundError, 404),
-]
-
-
-def register_error_handlers(app: FastAPI):
-    for exc_cls, status in HANDLED_ERRORS:
-        def make_handler(status_code: int):
-            def handler(_request: Request, exc: PipelineError):
-                return JSONResponse(
-                    status_code=status_code,
-                    content={"detail": exc.detail},
-                )
-            return handler
-        app.add_exception_handler(exc_cls, make_handler(status))
-
-    @app.exception_handler(RequestValidationError)
-    async def handle_request_validation_error(_request: Request, exc: RequestValidationError):
-        if settings.log_validation_payloads:
-            log.warning("Request validation failed: %s", exc.errors())
-        else:
-            log.warning("Request validation failed")
-        return JSONResponse(
-            status_code=422,
-            content={"detail": "Invalid request payload."},
-        )
-
-    @app.exception_handler(Exception)
-    async def handle_unexpected_error(_request: Request, exc: Exception):
-        if settings.log_tracebacks:
-            log.error("Unhandled application error: %s", safe_exception_text(exc, settings), exc_info=True)
-        else:
-            log.error("Unhandled application error: %s", safe_exception_text(exc, settings))
-        return JSONResponse(
-            status_code=500,
-            content={"detail": "Internal server error."},
-        )
 
 
 # ---------------------------------------------------------------------------
@@ -170,7 +110,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-register_error_handlers(app)
+register_error_handlers(app, settings)
 
 # ── Register routers ──────────────────────────────────────────
 app.include_router(calls.router)        # POST /api/calls/upload, GET /api/calls, GET /api/calls/{id}
