@@ -71,6 +71,16 @@ async def get_call_endpoint(call_id: str, request: Request):
     return call
 
 
+@router.get("/{call_id}/status")
+async def get_call_status_endpoint(call_id: str, request: Request):
+    service = request.app.state.call_service
+    call = await service.get_call_status(call_id)
+    if not call:
+        raise HTTPException(404, "Call not found.")
+
+    return call
+
+
 @router.get("/{call_id}/audio")
 async def get_call_audio_endpoint(call_id: str, request: Request):
     service = request.app.state.call_service

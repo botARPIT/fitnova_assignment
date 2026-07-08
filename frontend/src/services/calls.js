@@ -56,6 +56,10 @@ export function getCall(callId) {
   return get(`/api/calls/${callId}`).then(normalizeCallDetail)
 }
 
+export function getCallStatus(callId) {
+  return get(`/api/calls/${callId}/status`)
+}
+
 export function uploadCall(file, advisorId) {
   const form = new FormData()
   form.append('file', file)

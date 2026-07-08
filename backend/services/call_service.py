@@ -5,7 +5,7 @@ from __future__ import annotations
 import asyncpg
 from pathlib import Path
 
-from db.call_repository import get_call, list_calls
+from db.call_repository import get_call, get_call_status, list_calls
 from services import review_service
 
 
@@ -50,6 +50,22 @@ class CallService:
             call["effective_flags"] = []
 
         return call
+
+    async def get_call_status(self, call_id: str) -> dict | None:
+        call = await get_call_status(self._pool, call_id)
+        if not call:
+            return None
+
+        return {
+            "call_id": str(call["id"]),
+            "status": call.get("status"),
+            "failed_stage": call.get("failed_stage"),
+            "error_message": call.get("error_message"),
+            "advisor_id": str(call["advisor_id"]) if call.get("advisor_id") else None,
+            "organization_id": str(call["organization_id"]) if call.get("organization_id") else None,
+            "created_at": call.get("created_at"),
+            "completed_at": call.get("completed_at"),
+        }
 
     async def get_call_audio_path(self, call_id: str) -> Path | None:
         call = await get_call(self._pool, call_id)

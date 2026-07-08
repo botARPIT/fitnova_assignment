@@ -148,6 +148,27 @@ async def get_call(
     return result
 
 
+async def get_call_status(
+    conn: asyncpg.Connection,
+    call_id: str,
+) -> dict | None:
+    """Get lightweight status metadata for polling upload/job progress."""
+    row = await conn.fetchrow("""
+        SELECT
+            c.id,
+            c.status,
+            c.failed_stage,
+            c.error_message,
+            c.created_at,
+            c.completed_at,
+            c.advisor_id,
+            c.organization_id
+        FROM calls c
+        WHERE c.id = $1
+    """, uuid.UUID(call_id))
+    return dict(row) if row else None
+
+
 async def list_calls(
     conn: asyncpg.Connection,
     *,
