@@ -8,7 +8,7 @@ import ContestModal from '../components/common/ContestModal'
 import LoadingSkeleton from '../components/common/LoadingSkeleton'
 import ErrorState from '../components/common/ErrorState'
 import EmptyState from '../components/common/EmptyState'
-import { formatTime, scoreColor } from '../utils/format'
+import { formatScore, formatTime, getScoreEvidence, getScoreVal, scoreColor } from '../utils/format'
 import { contestFlag as contestFlagApi } from '../services/reviews'
 import styles from './CallDetailPage.module.css'
 
@@ -41,7 +41,7 @@ export default function CallDetailPage() {
   const scores = call.scores || {}
   const flags = call.flags || []
   const discardedFlags = call.discarded_flags || []
-  const turns = call.diarized_transcript || call.raw_transcript
+  const turns = call.turns || []
 
   const handleContest = async (flag) => {
     setContestFlag(flag)
@@ -60,7 +60,7 @@ export default function CallDetailPage() {
   }
 
   const handleQuoteClick = (flag) => {
-    setHighlightQuote(flag.quoted_line)
+    setHighlightQuote(flag.quoted_line || flag.quote || null)
     setActiveTab('transcript')
   }
 
@@ -148,7 +148,7 @@ export default function CallDetailPage() {
 
       {activeTab === 'transcript' && (
         <TranscriptViewer
-          turns={turns?.turns || []}
+          turns={turns}
           highlightQuote={highlightQuote}
         />
       )}
@@ -158,18 +158,28 @@ export default function CallDetailPage() {
           {Object.entries(scores).length > 0 ? (
             <div className={styles.dimScores}>
               {Object.entries(scores).map(([dim, val]) => (
-                <div key={dim} className={styles.dimRow}>
-                  <span className={styles.dimLabel}>{dim.replace(/_/g, ' ')}</span>
-                  <div className={styles.dimBar}>
-                    <div
-                      className={styles.dimFill}
-                      style={{
-                        width: `${(val / 5) * 100}%`,
-                        background: val >= 3.5 ? 'var(--success)' : val >= 2 ? 'var(--warning)' : 'var(--error)',
-                      }}
-                    />
+                <div key={dim} className={styles.dimBlock}>
+                  <div className={styles.dimRow}>
+                    <span className={styles.dimLabel}>{dim.replace(/_/g, ' ')}</span>
+                    <div className={styles.dimBar}>
+                      <div
+                        className={styles.dimFill}
+                        style={{
+                          width: `${((getScoreVal(val) ?? 0) / 5) * 100}%`,
+                          background:
+                            (getScoreVal(val) ?? 0) >= 3.5
+                              ? 'var(--success)'
+                              : (getScoreVal(val) ?? 0) >= 2
+                                ? 'var(--warning)'
+                                : 'var(--error)',
+                        }}
+                      />
+                    </div>
+                    <span className={`${styles.dimVal} ${styles[scoreColor(val)]}`}>{formatScore(val)}</span>
                   </div>
-                  <span className={`${styles.dimVal} ${styles[scoreColor(val)]}`}>{val.toFixed(1)}</span>
+                  {getScoreEvidence(val) && (
+                    <p className={styles.dimEvidence}>{getScoreEvidence(val)}</p>
+                  )}
                 </div>
               ))}
             </div>

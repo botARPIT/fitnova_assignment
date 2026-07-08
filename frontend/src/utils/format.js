@@ -12,15 +12,40 @@ export function formatBytes(bytes) {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
 }
 
+export function getScoreVal(val) {
+  if (val == null) return null
+  if (typeof val === 'object' && val !== null && 'score' in val) {
+    const num = Number(val.score)
+    return isNaN(num) ? null : num
+  }
+  const num = Number(val)
+  return isNaN(num) ? null : num
+}
+
+export function getScoreEvidence(val) {
+  if (!val || typeof val !== 'object') return ''
+  return typeof val.evidence === 'string' ? val.evidence : ''
+}
+
+export function formatScore(val) {
+  const scoreVal = getScoreVal(val)
+  if (scoreVal == null) return '—'
+  return scoreVal.toFixed(1)
+}
+
 export function scoreColor(val, max = 5) {
-  const pct = val / max
+  const scoreVal = getScoreVal(val)
+  if (scoreVal == null) return 'low'
+  const pct = scoreVal / max
   if (pct >= 0.7) return 'high'
   if (pct >= 0.4) return 'mid'
   return 'low'
 }
 
 export function scoreColorHex(val, max = 5) {
-  const pct = val / max
+  const scoreVal = getScoreVal(val)
+  if (scoreVal == null) return 'var(--text-secondary)'
+  const pct = scoreVal / max
   if (pct >= 0.7) return 'var(--success)'
   if (pct >= 0.4) return 'var(--warning)'
   return 'var(--error)'

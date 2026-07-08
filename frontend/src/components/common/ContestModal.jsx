@@ -4,6 +4,7 @@ import styles from './ContestModal.module.css'
 export default function ContestModal({ flag, onClose, onSubmit }) {
   const [reason, setReason] = useState('')
   const [submitting, setSubmitting] = useState(false)
+  const quote = flag?.quoted_line ?? flag?.quote ?? ''
 
   const handleSubmit = async () => {
     if (!reason.trim()) return
@@ -22,7 +23,7 @@ export default function ContestModal({ flag, onClose, onSubmit }) {
         {flag && (
           <div className={styles.flagPreview}>
             <span className={styles.tag}>{flag.tag?.replace(/_/g, ' ')}</span>
-            <p className={styles.quote}>&ldquo;{flag.quoted_line}&rdquo;</p>
+            <p className={styles.quote}>&ldquo;{quote}&rdquo;</p>
           </div>
         )}
         <textarea
