@@ -1,5 +1,5 @@
 .pulse {
-  background: linear-gradient(90deg, var(--surface) 25%, rgba(255, 255, 255, 0.06) 50%, var(--surface) 75%);
+  background: linear-gradient(90deg, var(--surface-container) 25%, var(--surface-container-highest) 50%, var(--surface-container) 75%);
   background-size: 200% 100%;
   animation: shimmer 1.5s ease infinite;
   border-radius: 6px;
@@ -18,9 +18,10 @@
 
 .card {
   padding: 24px;
-  background: var(--surface);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 12px;
+  background: var(--surface-container-lowest);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow-sm);
 }
 
 .row {
@@ -31,19 +32,21 @@
 
 .rowItem {
   padding: 16px;
-  background: var(--surface);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 12px;
+  background: var(--surface-container-lowest);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow-sm);
 }
 
 .table {
   display: flex;
   flex-direction: column;
   gap: 1px;
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 12px;
+  background: var(--border-color);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius);
   overflow: hidden;
+  box-shadow: var(--shadow-sm);
 }
 
 .tableHeader,
@@ -52,5 +55,6 @@
   grid-template-columns: 1fr 1.5fr 1fr 1fr;
   gap: 16px;
   padding: 16px 20px;
-  background: var(--surface);
+  background: var(--surface-container-lowest);
 }
+

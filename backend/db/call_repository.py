@@ -42,7 +42,7 @@ async def update_call_status(
             error_message = $5,
             completed_at = COALESCE($6, completed_at)
         WHERE id = $1
-    """, uuid.UUID(call_id), status, duration_sec, language, error_message, completed_at)
+    """, call_id, status, duration_sec, language, error_message, completed_at)
 
 
 async def get_call(pool: asyncpg.Pool, call_id: str) -> dict | None:
@@ -65,7 +65,7 @@ async def get_call(pool: asyncpg.Pool, call_id: str) -> dict | None:
         LEFT JOIN advisors a ON a.id = c.advisor_id
         LEFT JOIN teams te ON te.id = a.team_id
         WHERE c.id = $1
-    """, uuid.UUID(call_id))
+    """, call_id)
     if not row:
         return None
     result = dict(row)

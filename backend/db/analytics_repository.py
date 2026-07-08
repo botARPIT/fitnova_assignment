@@ -107,7 +107,7 @@ async def get_org_overview(
         *params, _uuid(org_id),
     )
 
-    obj_idx = idx + 1
+    obj_idx = idx
     obj_params = params[:]
     objective = await pool.fetchrow(
         f"""
@@ -116,7 +116,7 @@ async def get_org_overview(
             ROUND(AVG((r.scores->>'talk_ratio')::numeric)::numeric, 4)::float as avg_talk_ratio,
             ROUND(
                 (COUNT(*) FILTER (
-                    WHERE r.flags @> '[{"tag": "weak_or_missing_trial_booking"}]'::jsonb
+                    WHERE r.flags @> '[{{"tag": "weak_or_missing_trial_booking"}}]'::jsonb
                 ))::numeric / NULLIF(COUNT(*), 0) * 100, 2
             )::float as trial_booking_rate,
             ROUND(AVG((r.scores->>'interruptions')::numeric)::numeric, 2)::float as avg_interruptions,
@@ -130,7 +130,7 @@ async def get_org_overview(
         *obj_params, _uuid(org_id),
     )
 
-    flag_idx = obj_idx + 1
+    flag_idx = idx
     flag_params = obj_params[:]
     flags = await pool.fetch(
         f"""
@@ -179,6 +179,7 @@ async def get_team_stats(
         *time_params, _uuid(team_id),
     )
 
+    flags_time_clause, _ = _time_condition(2, from_date, to_date)
     flags = await pool.fetch(
         f"""
         SELECT flag->>'tag' as tag, COUNT(*)::int as count
@@ -186,7 +187,7 @@ async def get_team_stats(
         JOIN calls c ON c.id = r.call_id
         JOIN advisors a ON a.id = c.advisor_id,
         jsonb_array_elements(r.flags) as flag
-        WHERE a.team_id = $1 AND {time_clause}
+        WHERE a.team_id = $1 AND {flags_time_clause}
         GROUP BY flag->>'tag'
         ORDER BY count DESC
         LIMIT 5

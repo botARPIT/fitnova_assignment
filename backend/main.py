@@ -15,6 +15,7 @@ from fastapi.responses import JSONResponse
 
 from config import settings
 from db.connection import init_pool, close_pool
+from db import run_migrations
 from errors import (
     AudioValidationError, IngestionError, TranscriptionError,
     SpeakerRepairError, ConversationValidationError, AnalysisError,
@@ -109,6 +110,11 @@ async def lifespan(app: FastAPI):
     # Database pool
     pool = await init_pool(settings.database_url)
     log.info("Database pool initialized ✓")
+
+    # Auto-apply pending migrations
+    n = await run_migrations(pool)
+    if n:
+        log.info("Applied %d pending migration(s)", n)
 
     # Analytics service
     app.state.analytics_service = AnalyticsService(

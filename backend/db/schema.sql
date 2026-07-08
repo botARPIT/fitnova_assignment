@@ -45,6 +45,8 @@ CREATE TABLE transcripts (
     raw_transcript JSONB NOT NULL,
     diarized_transcript JSONB NOT NULL,
     engine TEXT NOT NULL DEFAULT 'deepgram',
+    metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
+    timings JSONB NOT NULL DEFAULT '{}'::jsonb,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 

@@ -23,7 +23,7 @@ async def save_report(
             overall_score = EXCLUDED.overall_score,
             flags = EXCLUDED.flags,
             discarded_flags = EXCLUDED.discarded_flags
-    """, uuid.UUID(call_id),
+    """, call_id,
         json.dumps(scores),
         overall_score,
         json.dumps(flags),

@@ -6,18 +6,19 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 20px;
+  margin-bottom: 24px;
 }
 
 .title {
-  font-size: 1.4rem;
+  font-size: 1.6rem;
   font-weight: 700;
   letter-spacing: -0.02em;
+  color: var(--text);
 }
 
 .filters {
   display: flex;
-  gap: 10px;
+  gap: 12px;
   margin-bottom: 20px;
   flex-wrap: wrap;
 }
@@ -26,17 +27,19 @@
   flex: 1;
   min-width: 200px;
   padding: 10px 14px;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 8px;
+  background: var(--surface-container-lowest);
+  border: 1px solid var(--color-outline-variant);
+  border-radius: var(--border-radius-sm);
   color: var(--text);
   font-family: inherit;
-  font-size: 0.85rem;
+  font-size: 0.88rem;
+  transition: var(--transition-fast);
 }
 
 .searchInput:focus {
   outline: none;
-  border-color: var(--accent);
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px rgba(0, 62, 199, 0.1);
 }
 
 .searchInput::placeholder {
@@ -45,29 +48,32 @@
 
 .select {
   padding: 10px 14px;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 8px;
+  background: var(--surface-container-lowest);
+  border: 1px solid var(--color-outline-variant);
+  border-radius: var(--border-radius-sm);
   color: var(--text);
   font-family: inherit;
-  font-size: 0.85rem;
+  font-size: 0.88rem;
   cursor: pointer;
   min-width: 140px;
+  transition: var(--transition-fast);
 }
 
 .select:focus {
   outline: none;
-  border-color: var(--accent);
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px rgba(0, 62, 199, 0.1);
 }
 
 .table {
   display: flex;
   flex-direction: column;
   gap: 1px;
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 10px;
+  background: var(--color-outline-variant);
+  border: 1px solid var(--color-outline-variant);
+  border-radius: var(--border-radius);
   overflow: hidden;
+  box-shadow: var(--shadow-sm);
 }
 
 .tableHeader,
@@ -76,18 +82,18 @@
   grid-template-columns: 1.5fr 1fr 1fr 0.8fr 0.8fr 1fr;
   gap: 12px;
   padding: 12px 18px;
-  background: var(--surface);
+  background: var(--surface-container-lowest);
   align-items: center;
-  font-size: 0.84rem;
+  font-size: 0.88rem;
 }
 
 .tableHeader {
-  font-size: 0.72rem;
+  font-size: 0.75rem;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.06em;
   color: var(--muted);
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--surface-container-low);
 }
 
 .sortable {
@@ -101,15 +107,16 @@
 
 .tableRow {
   cursor: pointer;
-  transition: background 0.15s ease;
+  transition: var(--transition-fast);
+  color: var(--text);
 }
 
 .tableRow:hover {
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--surface-container-low);
 }
 
 .status {
-  font-size: 0.72rem;
+  font-size: 0.75rem;
   font-weight: 600;
   padding: 2px 8px;
   border-radius: 4px;
@@ -119,18 +126,21 @@
 }
 
 .completed {
-  background: rgba(34, 197, 94, 0.1);
+  background: rgba(22, 163, 74, 0.1);
   color: var(--success);
+  border: 1px solid rgba(22, 163, 74, 0.2);
 }
 
 .processing {
-  background: rgba(245, 158, 11, 0.1);
+  background: rgba(217, 119, 6, 0.1);
   color: var(--warning);
+  border: 1px solid rgba(217, 119, 6, 0.2);
 }
 
 .failed {
-  background: rgba(239, 68, 68, 0.1);
+  background: rgba(186, 26, 26, 0.1);
   color: var(--error);
+  border: 1px solid rgba(186, 26, 26, 0.2);
 }
 
 .score {
@@ -139,7 +149,7 @@
 }
 
 .date {
-  font-size: 0.8rem;
+  font-size: 0.85rem;
   color: var(--muted);
 }
 
@@ -148,24 +158,24 @@
   align-items: center;
   justify-content: center;
   gap: 10px;
-  margin-top: 20px;
+  margin-top: 24px;
 }
 
 .pageBtn {
   padding: 8px 16px;
-  border-radius: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  background: transparent;
+  border-radius: var(--border-radius-sm);
+  border: 1px solid var(--color-outline-variant);
+  background: var(--surface-container-lowest);
   color: var(--text);
-  font-size: 0.8rem;
+  font-size: 0.85rem;
   font-weight: 500;
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition: var(--transition-fast);
 }
 
 .pageBtn:hover:not(:disabled) {
-  background: rgba(255, 255, 255, 0.05);
-  border-color: var(--accent);
+  background: var(--surface-container-low);
+  border-color: var(--primary);
 }
 
 .pageBtn:disabled {
@@ -174,8 +184,9 @@
 }
 
 .pageInfo {
-  font-size: 0.8rem;
+  font-size: 0.85rem;
   color: var(--muted);
   min-width: 120px;
   text-align: center;
 }
+

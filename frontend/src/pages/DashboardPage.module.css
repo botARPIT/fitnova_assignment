@@ -3,28 +3,37 @@
 }
 
 .title {
-  font-size: 1.4rem;
+  font-size: 1.6rem;
   font-weight: 700;
   margin-bottom: 24px;
   letter-spacing: -0.02em;
+  color: var(--text);
 }
 
 .cards {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-  gap: 14px;
+  gap: 16px;
   margin-bottom: 28px;
 }
 
 .card {
   padding: 20px;
-  background: var(--surface);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 12px;
+  background: var(--surface-container-lowest);
+  border: 1px solid var(--color-outline-variant);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow-sm);
+  transition: var(--transition-fast);
+}
+
+.card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+  border-color: var(--color-outline);
 }
 
 .cardLabel {
-  font-size: 0.72rem;
+  font-size: 0.75rem;
   text-transform: uppercase;
   letter-spacing: 0.06em;
   color: var(--muted);
@@ -52,14 +61,15 @@
 }
 
 .section {
-  background: var(--surface);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 12px;
+  background: var(--surface-container-lowest);
+  border: 1px solid var(--color-outline-variant);
+  border-radius: var(--border-radius);
   padding: 20px;
+  box-shadow: var(--shadow-sm);
 }
 
 .sectionTitle {
-  font-size: 0.9rem;
+  font-size: 1rem;
   font-weight: 600;
   margin-bottom: 16px;
   color: var(--text);
@@ -75,31 +85,40 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 8px 12px;
-  background: rgba(255, 255, 255, 0.03);
-  border-radius: 8px;
+  padding: 10px 14px;
+  background: var(--surface-container-low);
+  border: 1px solid var(--color-outline-variant);
+  border-radius: var(--border-radius-sm);
+  transition: var(--transition-fast);
+}
+
+.flagRow:hover {
+  background: var(--surface-container);
+  border-color: var(--color-outline);
 }
 
 .flagTag {
-  font-size: 0.8rem;
+  font-size: 0.85rem;
   color: var(--text);
+  font-weight: 500;
 }
 
 .flagCount {
-  font-size: 0.8rem;
+  font-size: 0.85rem;
   font-weight: 700;
   font-family: 'JetBrains Mono', monospace;
-  color: var(--accent);
+  color: var(--primary);
 }
 
 .callTable {
   display: flex;
   flex-direction: column;
   gap: 1px;
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 10px;
+  background: var(--color-outline-variant);
+  border: 1px solid var(--color-outline-variant);
+  border-radius: var(--border-radius);
   overflow: hidden;
+  box-shadow: var(--shadow-sm);
 }
 
 .callHeader,
@@ -108,31 +127,32 @@
   grid-template-columns: 1.5fr 1fr 1fr 1fr 0.8fr;
   gap: 12px;
   padding: 12px 18px;
-  background: var(--surface);
+  background: var(--surface-container-lowest);
   align-items: center;
-  font-size: 0.84rem;
+  font-size: 0.88rem;
 }
 
 .callHeader {
-  font-size: 0.72rem;
+  font-size: 0.75rem;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.06em;
   color: var(--muted);
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--surface-container-low);
 }
 
 .callRow {
   cursor: pointer;
-  transition: background 0.15s ease;
+  transition: var(--transition-fast);
+  color: var(--text);
 }
 
 .callRow:hover {
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--surface-container-low);
 }
 
 .status {
-  font-size: 0.72rem;
+  font-size: 0.75rem;
   font-weight: 600;
   padding: 2px 8px;
   border-radius: 4px;
@@ -142,21 +162,25 @@
 }
 
 .completed {
-  background: rgba(34, 197, 94, 0.1);
+  background: rgba(22, 163, 74, 0.1);
   color: var(--success);
+  border: 1px solid rgba(22, 163, 74, 0.2);
 }
 
 .processing {
-  background: rgba(245, 158, 11, 0.1);
+  background: rgba(217, 119, 6, 0.1);
   color: var(--warning);
+  border: 1px solid rgba(217, 119, 6, 0.2);
 }
 
 .failed {
-  background: rgba(239, 68, 68, 0.1);
+  background: rgba(186, 26, 26, 0.1);
   color: var(--error);
+  border: 1px solid rgba(186, 26, 26, 0.2);
 }
 
 .scoreCell {
   font-family: 'JetBrains Mono', monospace;
   font-weight: 600;
 }
+

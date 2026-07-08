@@ -3,9 +3,17 @@
   flex-direction: column;
   align-items: center;
   padding: 20px;
-  background: var(--surface);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 12px;
+  background: var(--surface-container-lowest);
+  border: 1px solid var(--outline-variant);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow-sm);
+  transition: var(--transition-normal);
+}
+
+.container:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+  border-color: var(--primary);
 }
 
 .sm { padding: 14px; }
@@ -14,44 +22,52 @@
 
 .md .value { font-size: 2rem; }
 
-.lg { padding: 28px; }
+.lg {
+  padding: 28px;
+  background: var(--surface-container-low);
+  border-color: var(--primary-container);
+}
 .lg .value { font-size: 2.8rem; }
 .lg .barTrack { height: 8px; }
 
 .label {
-  font-size: 0.72rem;
+  font-size: 0.75rem;
+  font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--muted);
-  margin-bottom: 8px;
+  letter-spacing: 0.08em;
+  color: var(--on-surface-variant);
+  margin-bottom: 10px;
+  text-align: center;
 }
 
 .value {
   font-weight: 700;
   font-family: 'JetBrains Mono', monospace;
   line-height: 1;
-  margin-bottom: 12px;
+  margin-bottom: 14px;
 }
 
 .barTrack {
   width: 100%;
   height: 6px;
-  background: rgba(255, 255, 255, 0.06);
+  background: var(--surface-container-high);
   border-radius: 3px;
   overflow: hidden;
+  border: 1px solid var(--outline-variant);
 }
 
 .barFill {
   height: 100%;
   border-radius: 3px;
-  transition: width 0.6s ease;
+  transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .range {
   width: 100%;
   display: flex;
   justify-content: space-between;
-  font-size: 0.65rem;
-  color: var(--muted);
-  margin-top: 4px;
+  font-size: 0.7rem;
+  font-weight: 500;
+  color: var(--on-surface-variant);
+  margin-top: 6px;
 }

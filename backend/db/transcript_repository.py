@@ -18,14 +18,14 @@ async def save_transcript(
 ) -> None:
     await pool.execute("""
         INSERT INTO transcripts (call_id, raw_transcript, diarized_transcript, engine, metadata, timings)
-        VALUES ($1, $2::jsonb, $3::jsonb, $4, $5::jsonb, $6::jsonb)
+        VALUES ($1::uuid, $2::jsonb, $3::jsonb, $4, $5::jsonb, $6::jsonb)
         ON CONFLICT (call_id) DO UPDATE SET
             raw_transcript = EXCLUDED.raw_transcript,
             diarized_transcript = EXCLUDED.diarized_transcript,
             engine = EXCLUDED.engine,
             metadata = EXCLUDED.metadata,
             timings = EXCLUDED.timings
-    """, uuid.UUID(call_id),
+    """, call_id,
         json.dumps(raw_transcript),
         json.dumps(diarized_transcript),
         engine,

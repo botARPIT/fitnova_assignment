@@ -2,14 +2,59 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
 
 :root {
-  --bg: #0a0a0f;
-  --surface: #12121a;
-  --accent: #6366f1;
-  --success: #22c55e;
-  --warning: #f59e0b;
-  --error: #ef4444;
-  --text: #e2e8f0;
-  --muted: #94a3b8;
+  /* FitNova Design System Tokens */
+  --surface: #f8f9ff;
+  --surface-dim: #cbdbf5;
+  --surface-bright: #f8f9ff;
+  --surface-container-lowest: #ffffff;
+  --surface-container-low: #eff4ff;
+  --surface-container: #e5eeff;
+  --surface-container-high: #dce9ff;
+  --surface-container-highest: #d3e4fe;
+  --on-surface: #0b1c30;
+  --on-surface-variant: #434656;
+  --inverse-surface: #213145;
+  --inverse-on-surface: #eaf1ff;
+  --outline: #737688;
+  --outline-variant: #c3c5d9;
+  --surface-tint: #004ced;
+  --primary: #003ec7;
+  --on-primary: #ffffff;
+  --primary-container: #0052ff;
+  --on-primary-container: #dfe3ff;
+  --inverse-primary: #b7c4ff;
+  --secondary: #565e74;
+  --on-secondary: #ffffff;
+  --secondary-container: #dae2fd;
+  --on-secondary-container: #5c647a;
+  --tertiary: #952200;
+  --on-tertiary: #ffffff;
+  --tertiary-container: #bf3003;
+  --on-tertiary-container: #ffddd5;
+  --error: #ba1a1a;
+  --on-error: #ffffff;
+  --error-container: #ffdad6;
+  --on-error-container: #410002;
+
+  /* Compatibility mappings */
+  --bg: var(--surface);
+  --accent: var(--primary);
+  --success: #16a34a;
+  --warning: #d97706;
+  --text: var(--on-surface);
+  --muted: var(--on-surface-variant);
+
+  /* Layout and premium details */
+  --border-color: var(--outline-variant);
+  --border-radius: 12px;
+  --border-radius-sm: 8px;
+  --border-radius-lg: 16px;
+
+  --shadow-sm: 0 1px 2px 0 rgba(11, 28, 48, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(11, 28, 48, 0.08), 0 2px 4px -2px rgba(11, 28, 48, 0.08);
+  --shadow-lg: 0 10px 15px -3px rgba(11, 28, 48, 0.1), 0 4px 6px -4px rgba(11, 28, 48, 0.1);
+  --transition-fast: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-normal: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 *, *::before, *::after {
@@ -18,7 +63,9 @@
   box-sizing: border-box;
 }
 
-html { font-size: 16px; }
+html {
+  font-size: 16px;
+}
 
 body {
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
@@ -32,6 +79,7 @@ body {
 
 #root {
   min-height: 100vh;
+  background: var(--bg);
 }
 
 ::selection {
@@ -39,16 +87,29 @@ body {
   color: white;
 }
 
-/* scrollbar */
-::-webkit-scrollbar { width: 6px; height: 6px; }
-::-webkit-scrollbar-track { background: transparent; }
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(11, 28, 48, 0.1);
   border-radius: 3px;
 }
-::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.2); }
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(11, 28, 48, 0.2);
+}
 
 a {
   color: var(--accent);
   text-decoration: none;
+  transition: var(--transition-fast);
 }
+
+a:hover {
+  color: var(--primary-container);
+}
+

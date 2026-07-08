@@ -10,36 +10,39 @@
 .icon {
   margin-bottom: 16px;
   color: var(--error);
-  opacity: 0.7;
+  opacity: 0.85;
 }
 
 .title {
-  font-size: 1rem;
+  font-size: 1.1rem;
   font-weight: 600;
-  color: var(--text);
+  color: var(--on-surface);
   margin-bottom: 8px;
 }
 
 .message {
-  font-size: 0.85rem;
-  color: var(--muted);
+  font-size: 0.9rem;
+  color: var(--on-surface-variant);
   max-width: 400px;
-  line-height: 1.5;
+  line-height: 1.6;
 }
 
 .retryBtn {
   margin-top: 20px;
   padding: 10px 24px;
-  background: var(--accent);
-  color: white;
+  background: var(--primary);
+  color: var(--on-primary);
   border: none;
-  border-radius: 8px;
-  font-size: 0.85rem;
+  border-radius: var(--border-radius-sm);
+  font-size: 0.875rem;
   font-weight: 600;
   cursor: pointer;
-  transition: opacity 0.2s;
+  transition: var(--transition-fast);
+  box-shadow: var(--shadow-sm);
 }
 
 .retryBtn:hover {
-  opacity: 0.9;
+  background: var(--primary-container);
+  box-shadow: var(--shadow-md);
 }
+

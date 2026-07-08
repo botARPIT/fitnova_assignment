@@ -1,191 +1,214 @@
 .page {
   max-width: 640px;
+  margin: 0 auto;
+  padding: 24px;
 }
 
 .title {
-  font-size: 1.4rem;
+  font-size: 1.8rem;
   font-weight: 700;
-  margin-bottom: 24px;
+  margin-bottom: 28px;
   letter-spacing: -0.02em;
+  color: var(--on-surface);
 }
 
 .errorBanner {
-  margin-bottom: 16px;
-  background: rgba(239, 68, 68, 0.05);
-  border: 1px solid rgba(239, 68, 68, 0.15);
+  margin-bottom: 20px;
+  background: var(--error-container);
+  border: 1px solid var(--error);
   border-radius: 12px;
-  padding: 8px;
+  padding: 12px;
 }
 
 .progressSection {
-  padding: 32px;
-  background: var(--surface);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 12px;
+  padding: 40px 32px;
+  background: var(--surface-container-lowest);
+  border: 1px solid var(--outline-variant);
+  border-radius: var(--border-radius-lg);
   text-align: center;
+  box-shadow: var(--shadow-md);
+  transition: var(--transition-normal);
 }
 
 .progressBar {
-  height: 4px;
-  background: rgba(255, 255, 255, 0.06);
-  border-radius: 2px;
+  height: 6px;
+  background: var(--surface-container-high);
+  border-radius: 3px;
   overflow: hidden;
-  margin: 20px 0 12px;
+  margin: 24px 0 16px;
 }
 
 .progressFill {
   height: 100%;
-  background: linear-gradient(90deg, var(--accent), #a78bfa);
-  border-radius: 2px;
-  transition: width 0.5s ease;
+  background: linear-gradient(90deg, var(--primary), var(--surface-tint));
+  border-radius: 3px;
+  transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .progressText {
-  font-size: 0.85rem;
-  color: var(--muted);
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--on-surface-variant);
 }
 
 .resultSection {
-  margin-top: 20px;
-  padding-top: 20px;
-  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  margin-top: 24px;
+  padding-top: 24px;
+  border-top: 1px solid var(--outline-variant);
 }
 
 .resultInfo {
   display: flex;
   justify-content: center;
-  gap: 24px;
-  font-size: 0.9rem;
-  color: var(--text);
-  margin-bottom: 16px;
+  gap: 32px;
+  font-size: 0.95rem;
+  color: var(--on-surface);
+  margin-bottom: 20px;
+}
+
+.resultInfo strong {
+  color: var(--primary);
+  font-size: 1.1rem;
 }
 
 .resultActions {
   display: flex;
   justify-content: center;
-  gap: 12px;
+  gap: 16px;
 }
 
 .engineSelector {
-  margin-bottom: 20px;
+  margin-bottom: 28px;
 }
 
 .engineLabel {
   display: block;
-  font-size: 0.75rem;
-  font-weight: 600;
+  font-size: 0.8rem;
+  font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--muted);
-  margin-bottom: 8px;
+  letter-spacing: 0.08em;
+  color: var(--on-surface-variant);
+  margin-bottom: 10px;
 }
 
 .engineOptions {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 10px;
+  gap: 16px;
 }
 
 .engineBtn {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 12px 16px;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 10px;
+  gap: 14px;
+  padding: 16px;
+  background: var(--surface-container-lowest);
+  border: 1px solid var(--outline-variant);
+  border-radius: var(--border-radius);
   cursor: pointer;
   text-align: left;
-  color: var(--muted);
-  transition: all 0.2s ease;
+  color: var(--on-surface-variant);
+  transition: var(--transition-fast);
   font-family: inherit;
+  box-shadow: var(--shadow-sm);
 }
 
 .engineBtn:hover {
-  border-color: rgba(99, 102, 241, 0.4);
+  border-color: var(--primary);
+  background: var(--surface-container-low);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
 }
 
 .engineActive {
-  border-color: var(--accent);
-  background: rgba(99, 102, 241, 0.1);
-  color: var(--text);
+  border-color: var(--primary);
+  background: var(--secondary-container);
+  color: var(--on-surface);
+  box-shadow: var(--shadow-md);
 }
 
 .engineIcon {
-  font-size: 1.4rem;
+  font-size: 1.6rem;
   flex-shrink: 0;
 }
 
 .engineBtn strong {
   display: block;
-  font-size: 0.82rem;
+  font-size: 0.9rem;
   font-weight: 600;
+  color: var(--on-surface);
 }
 
 .engineBtn small {
-  font-size: 0.7rem;
-  color: var(--muted);
+  font-size: 0.75rem;
+  color: var(--on-surface-variant);
 }
 
 .dropZone {
-  border: 2px dashed rgba(255, 255, 255, 0.1);
-  border-radius: 12px;
-  padding: 48px 20px;
+  border: 2px dashed var(--outline);
+  border-radius: var(--border-radius-lg);
+  padding: 56px 24px;
   text-align: center;
   cursor: pointer;
-  transition: all 0.25s ease;
-  background: rgba(255, 255, 255, 0.02);
+  transition: var(--transition-normal);
+  background: var(--surface-container-lowest);
+  box-shadow: var(--shadow-sm);
 }
 
 .dropZone:hover,
 .dragOver {
-  border-color: var(--accent);
-  background: rgba(99, 102, 241, 0.05);
+  border-color: var(--primary);
+  background: var(--surface-container-low);
+  box-shadow: var(--shadow-md);
 }
 
 .dropZone svg {
-  color: var(--muted);
-  margin-bottom: 12px;
+  color: var(--outline);
+  margin-bottom: 16px;
+  transition: var(--transition-fast);
 }
 
 .dropZone:hover svg {
-  color: var(--accent);
+  color: var(--primary);
+  transform: translateY(-4px);
 }
 
 .dropZone p {
-  color: var(--muted);
-  font-size: 0.9rem;
+  color: var(--on-surface-variant);
+  font-size: 0.95rem;
 }
 
 .dropZone p strong {
-  color: var(--accent);
+  color: var(--primary);
 }
 
 .formats {
-  font-size: 0.75rem !important;
-  margin-top: 6px;
+  font-size: 0.8rem !important;
+  color: var(--outline) !important;
+  margin-top: 8px;
 }
 
 .fileInfo {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 14px 18px;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 10px;
-  margin-top: 16px;
+  gap: 16px;
+  padding: 16px 20px;
+  background: var(--surface-container-lowest);
+  border: 1px solid var(--outline-variant);
+  border-radius: var(--border-radius);
+  margin-top: 20px;
+  box-shadow: var(--shadow-sm);
 }
 
 .fileIcon {
-  width: 36px;
-  height: 36px;
-  border-radius: 8px;
-  background: rgba(99, 102, 241, 0.1);
+  width: 40px;
+  height: 40px;
+  border-radius: var(--border-radius-sm);
+  background: var(--secondary-container);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--accent);
+  color: var(--primary);
   flex-shrink: 0;
 }
 
@@ -195,8 +218,9 @@
 }
 
 .fileName {
-  font-size: 0.85rem;
-  font-weight: 500;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--on-surface);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -204,69 +228,80 @@
 
 .fileSize {
   font-size: 0.75rem;
-  color: var(--muted);
+  color: var(--on-surface-variant);
 }
 
 .removeBtn {
   background: none;
   border: none;
-  color: var(--muted);
+  color: var(--on-surface-variant);
   cursor: pointer;
-  padding: 4px;
-  border-radius: 4px;
-  font-size: 1rem;
+  padding: 6px;
+  border-radius: 50%;
+  font-size: 1.1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: var(--transition-fast);
 }
 
 .removeBtn:hover {
+  background: var(--error-container);
   color: var(--error);
 }
 
 .uploadOptions {
-  margin-top: 16px;
+  margin-top: 20px;
 }
 
 .advisorInput {
   width: 100%;
-  padding: 10px 14px;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 8px;
-  color: var(--text);
+  padding: 12px 16px;
+  background: var(--surface-container-lowest);
+  border: 1px solid var(--outline);
+  border-radius: var(--border-radius-sm);
+  color: var(--on-surface);
   font-family: inherit;
-  font-size: 0.85rem;
+  font-size: 0.9rem;
+  box-shadow: var(--shadow-sm);
+  transition: var(--transition-fast);
 }
 
 .advisorInput:focus {
   outline: none;
-  border-color: var(--accent);
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(0, 76, 237, 0.15);
 }
 
 .advisorInput::placeholder {
-  color: var(--muted);
+  color: var(--outline);
 }
 
 .actions {
-  margin-top: 20px;
+  margin-top: 24px;
 }
 
 .primaryBtn {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  padding: 12px 28px;
-  border-radius: 8px;
+  padding: 14px 32px;
+  border-radius: var(--border-radius-sm);
   border: none;
-  background: var(--accent);
-  color: white;
-  font-size: 0.88rem;
+  background: var(--primary);
+  color: var(--on-primary);
+  font-size: 0.95rem;
   font-weight: 600;
   cursor: pointer;
-  transition: opacity 0.2s ease;
+  transition: var(--transition-fast);
   font-family: inherit;
+  box-shadow: var(--shadow-sm);
 }
 
 .primaryBtn:hover:not(:disabled) {
-  opacity: 0.9;
+  background: var(--primary-container);
+  box-shadow: var(--shadow-md);
+  transform: translateY(-1px);
 }
 
 .primaryBtn:disabled {
@@ -275,19 +310,21 @@
 }
 
 .secondaryBtn {
-  padding: 12px 28px;
-  border-radius: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  background: transparent;
-  color: var(--text);
-  font-size: 0.88rem;
+  padding: 14px 32px;
+  border-radius: var(--border-radius-sm);
+  border: 1px solid var(--outline);
+  background: var(--surface-container-lowest);
+  color: var(--on-surface-variant);
+  font-size: 0.95rem;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition: var(--transition-fast);
   font-family: inherit;
+  box-shadow: var(--shadow-sm);
 }
 
 .secondaryBtn:hover {
-  background: rgba(255, 255, 255, 0.05);
-  border-color: rgba(255, 255, 255, 0.2);
+  background: var(--surface-container-low);
+  border-color: var(--on-surface);
+  color: var(--on-surface);
 }

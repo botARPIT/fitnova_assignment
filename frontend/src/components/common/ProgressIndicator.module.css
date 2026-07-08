@@ -22,17 +22,18 @@
   font-size: 0.78rem;
   font-weight: 700;
   font-family: 'JetBrains Mono', monospace;
-  border: 2px solid rgba(255, 255, 255, 0.12);
-  color: var(--muted);
-  background: transparent;
-  transition: all 0.3s ease;
+  border: 2px solid var(--border-color);
+  color: var(--on-surface-variant);
+  background: var(--surface-container-lowest);
+  transition: var(--transition-normal);
   flex-shrink: 0;
+  box-shadow: var(--shadow-sm);
 }
 
 .active .dot {
-  border-color: var(--accent);
-  color: var(--accent);
-  background: rgba(99, 102, 241, 0.1);
+  border-color: var(--primary);
+  color: var(--primary);
+  background: var(--surface-container-high);
 }
 
 .done .dot {
@@ -44,12 +45,13 @@
 .label {
   font-size: 0.78rem;
   font-weight: 500;
-  color: var(--muted);
+  color: var(--on-surface-variant);
   white-space: nowrap;
 }
 
 .active .label {
-  color: var(--text);
+  color: var(--on-surface);
+  font-weight: 600;
 }
 
 .done .label {
@@ -59,11 +61,12 @@
 .line {
   width: 48px;
   height: 2px;
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--border-color);
   margin: 0 8px;
-  transition: background 0.3s ease;
+  transition: var(--transition-normal);
 }
 
 .lineDone {
   background: var(--success);
 }
+

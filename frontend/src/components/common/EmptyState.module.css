@@ -10,23 +10,25 @@
 .icon {
   font-size: 2.5rem;
   margin-bottom: 16px;
-  opacity: 0.4;
+  opacity: 0.35;
+  color: var(--on-surface-variant);
 }
 
 .title {
-  font-size: 1rem;
+  font-size: 1.1rem;
   font-weight: 600;
-  color: var(--text);
+  color: var(--on-surface);
   margin-bottom: 8px;
 }
 
 .message {
-  font-size: 0.85rem;
-  color: var(--muted);
+  font-size: 0.9rem;
+  color: var(--on-surface-variant);
   max-width: 400px;
-  line-height: 1.5;
+  line-height: 1.6;
 }
 
 .action {
   margin-top: 20px;
 }
+

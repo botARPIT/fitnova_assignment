@@ -1,18 +1,21 @@
 .page {
   max-width: 1000px;
+  margin: 0 auto;
+  padding: 24px;
 }
 
 .title {
-  font-size: 1.4rem;
+  font-size: 1.8rem;
   font-weight: 700;
-  margin-bottom: 24px;
+  margin-bottom: 28px;
   letter-spacing: -0.02em;
+  color: var(--on-surface);
 }
 
 .teamTabs {
   display: flex;
-  gap: 10px;
-  margin-bottom: 24px;
+  gap: 12px;
+  margin-bottom: 28px;
   flex-wrap: wrap;
 }
 
@@ -20,114 +23,124 @@
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 2px;
-  padding: 14px 20px;
-  border-radius: 10px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  background: var(--surface);
-  color: var(--muted);
+  gap: 4px;
+  padding: 16px 24px;
+  border-radius: var(--border-radius);
+  border: 1px solid var(--outline-variant);
+  background: var(--surface-container-lowest);
+  color: var(--on-surface-variant);
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition: var(--transition-fast);
   font-family: inherit;
   text-align: left;
-  font-size: 0.88rem;
+  font-size: 0.95rem;
   font-weight: 600;
+  box-shadow: var(--shadow-sm);
 }
 
 .teamTab:hover {
-  border-color: rgba(99, 102, 241, 0.3);
+  border-color: var(--primary);
+  background: var(--surface-container-low);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
 }
 
 .activeTeam {
-  border-color: var(--accent);
-  background: rgba(99, 102, 241, 0.08);
-  color: var(--accent);
+  border-color: var(--primary);
+  background: var(--secondary-container);
+  color: var(--on-surface);
+  box-shadow: var(--shadow-md);
 }
 
 .memberCount {
-  font-size: 0.72rem;
-  font-weight: 400;
-  color: var(--muted);
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--on-surface-variant);
 }
 
 .sectionTitle {
-  font-size: 0.9rem;
+  font-size: 1.1rem;
   font-weight: 600;
-  margin-bottom: 14px;
+  margin-bottom: 16px;
+  color: var(--on-surface);
 }
 
 .leaderboard {
-  margin-bottom: 28px;
+  margin-bottom: 32px;
 }
 
 .table {
   display: flex;
   flex-direction: column;
-  gap: 1px;
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 10px;
+  background: var(--outline-variant);
+  border: 1px solid var(--outline-variant);
+  border-radius: var(--border-radius);
   overflow: hidden;
+  box-shadow: var(--shadow-md);
 }
 
 .tableHeader,
 .tableRow {
   display: grid;
   grid-template-columns: 0.5fr 2fr 1fr 0.8fr 0.8fr;
-  gap: 12px;
-  padding: 12px 18px;
-  background: var(--surface);
+  gap: 16px;
+  padding: 14px 20px;
+  background: var(--surface-container-lowest);
   align-items: center;
-  font-size: 0.84rem;
+  font-size: 0.9rem;
+  color: var(--on-surface);
 }
 
 .tableHeader {
-  font-size: 0.72rem;
-  font-weight: 600;
+  font-size: 0.75rem;
+  font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--muted);
-  background: rgba(255, 255, 255, 0.03);
+  letter-spacing: 0.08em;
+  color: var(--on-surface-variant);
+  background: var(--surface-container-high);
+  border-bottom: 1px solid var(--outline-variant);
 }
 
 .tableRow {
   cursor: pointer;
-  transition: background 0.15s ease;
+  transition: var(--transition-fast);
 }
 
 .tableRow:hover {
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--surface-container-low);
 }
 
 .selectedRow {
-  background: rgba(99, 102, 241, 0.05);
+  background: var(--surface-container-low);
+  font-weight: 500;
 }
 
 .rank {
   font-family: 'JetBrains Mono', monospace;
   font-weight: 700;
-  color: var(--muted);
+  color: var(--on-surface-variant);
 }
 
 .role {
-  font-size: 0.78rem;
+  font-size: 0.85rem;
   text-transform: capitalize;
-  color: var(--muted);
+  color: var(--on-surface-variant);
 }
 
 .score {
   font-family: 'JetBrains Mono', monospace;
   font-weight: 600;
+  color: var(--primary);
 }
 
 .advisorDetail {
-  margin-top: 28px;
+  margin-top: 32px;
 }
 
 .advisorGrid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 14px;
+  gap: 16px;
 }
 
 .fullWidth {
@@ -135,45 +148,49 @@
 }
 
 .advisorCard {
-  padding: 18px;
-  background: var(--surface);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 10px;
+  padding: 20px;
+  background: var(--surface-container-lowest);
+  border: 1px solid var(--outline-variant);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow-sm);
 }
 
 .advisorStatLabel {
-  font-size: 0.72rem;
+  font-size: 0.75rem;
   text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--muted);
-  margin-bottom: 6px;
+  letter-spacing: 0.08em;
+  color: var(--on-surface-variant);
+  margin-bottom: 8px;
 }
 
 .advisorStatValue {
-  font-size: 1.4rem;
+  font-size: 1.8rem;
   font-weight: 700;
   font-family: 'JetBrains Mono', monospace;
+  color: var(--on-surface);
 }
 
 .cardTitle {
-  font-size: 0.82rem;
+  font-size: 0.95rem;
   font-weight: 600;
-  margin-bottom: 12px;
+  margin-bottom: 16px;
+  color: var(--on-surface);
 }
 
 .recentList {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 8px;
 }
 
 .recentRow {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 6px 0;
-  font-size: 0.82rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  padding: 10px 0;
+  font-size: 0.9rem;
+  border-bottom: 1px solid var(--outline-variant);
+  color: var(--on-surface);
 }
 
 .recentRow:last-child {
@@ -181,33 +198,35 @@
 }
 
 .recentDate {
-  color: var(--muted);
-  font-size: 0.78rem;
+  color: var(--on-surface-variant);
+  font-size: 0.8rem;
 }
 
 .recentScore {
   font-family: 'JetBrains Mono', monospace;
   font-weight: 600;
+  color: var(--primary);
 }
 
 .flagFreq {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 8px;
 }
 
 .flagRow {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 6px 12px;
-  background: rgba(255, 255, 255, 0.03);
-  border-radius: 6px;
-  font-size: 0.82rem;
+  padding: 10px 16px;
+  background: var(--surface-container-low);
+  border-radius: var(--border-radius-sm);
+  font-size: 0.9rem;
+  color: var(--on-surface);
 }
 
 .flagCount {
   font-family: 'JetBrains Mono', monospace;
   font-weight: 600;
-  color: var(--accent);
+  color: var(--primary);
 }
