@@ -24,6 +24,7 @@ class Settings:
     hf_token: str = os.getenv("HF_TOKEN", "")
     deepgram_model: str = os.getenv("DEEPGRAM_MODEL", "nova-3")
     deepgram_diarize_model: str = os.getenv("DEEPGRAM_DIARIZE_MODEL", "latest")
+    deepgram_detect_language: bool = _env_bool("DEEPGRAM_DETECT_LANGUAGE", True)
     speaker_repair_primary_model: str = os.getenv("SPEAKER_REPAIR_PRIMARY_MODEL", "gpt-4o-mini")
     speaker_repair_model: str = os.getenv("SPEAKER_REPAIR_MODEL", "gemini-2.5-flash")
     analysis_model: str = os.getenv("ANALYSIS_MODEL", "gemini-2.5-flash")

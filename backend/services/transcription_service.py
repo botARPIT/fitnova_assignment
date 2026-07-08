@@ -1,6 +1,7 @@
 """Transcription engines: WhisperX (local GPU) and Deepgram (cloud API)."""
 
 import asyncio
+import json
 import logging
 import time
 
@@ -139,8 +140,35 @@ class TranscriptionService:
 
     # ── Deepgram (cloud) ───────────────────────────────────────
 
+    def _extract_detected_language(self, result) -> str | None:
+        try:
+            if result.channels and result.channels[0].alternatives:
+                alt = result.channels[0].alternatives[0]
+                detected = getattr(alt, "detected_language", None)
+                if detected:
+                    return detected
+                detected_languages = getattr(alt, "detected_languages", None)
+                if detected_languages:
+                    return ", ".join(detected_languages)
+        except Exception:
+            return None
+        return None
+
+    def _log_deepgram_output(self, *, turns: list[Turn], duration: float, language: str | None) -> None:
+        if not self._settings.log_sensitive_details:
+            return
+
+        log.info(
+            "Deepgram STT output (model=%s, multilingual=%s, duration=%.2fs, language=%s):\n%s",
+            self._settings.deepgram_model,
+            bool(self._settings.deepgram_detect_language),
+            duration,
+            language or "unknown",
+            json.dumps([turn.model_dump() for turn in turns], ensure_ascii=False, indent=2),
+        )
+
     async def transcribe_deepgram(self, raw_bytes: bytes) -> tuple[list[Turn], float, object]:
-        """Run Deepgram Nova-2-phonecall transcription with diarization.
+        """Run Deepgram transcription with diarization.
 
         The Deepgram API call is wrapped in retry logic for transient failures.
         Transcript parsing is excluded from the retry boundary.
@@ -158,7 +186,7 @@ class TranscriptionService:
                 smart_format=True,
                 diarize_model=self._settings.deepgram_diarize_model,
                 utterances=True,
-                detect_language=True,
+                detect_language=self._settings.deepgram_detect_language,
             )
 
         response = await retry_async(
@@ -197,6 +225,13 @@ class TranscriptionService:
                 end=duration,
                 text=alt.transcript,
             ))
+
+        detected_language = self._extract_detected_language(result)
+        self._log_deepgram_output(
+            turns=turns,
+            duration=duration,
+            language=detected_language,
+        )
 
         return turns, duration, response
 

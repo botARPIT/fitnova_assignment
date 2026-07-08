@@ -148,3 +148,103 @@ For production or Vercel deployment, set `VITE_API_BASE_URL` to the public backe
 - `WRITEUP.md` contains the design tradeoffs and what remains incomplete.
 - `frontend/README.md` contains the frontend-specific routes and runtime notes.
 - `PROJECT_CONTEXT_AND_ARCHITECTURE.md` documents the backend layers, schemas, and request/response shapes.
+
+## Diagrams
+
+### Entire System Diagram
+```mermaid
+flowchart LR
+
+    A[Upload Call]
+    B[SHA-256 Fingerprint]
+    C[STT<br/>Deepgram]
+    D[Speaker Repair<br/>Gemini]
+    E[Conversation Validation]
+    F[Call Analysis<br/>Gemini]
+    G[Evidence Validation]
+    H[Company Facts Validation]
+    I[PII Redaction]
+    J[(PostgreSQL)]
+    K[Advisor Dashboard]
+    L[Team Leader Dashboard]
+    M[Sales Director Dashboard]
+
+    A --> B
+    B --> C
+    C --> D
+    D --> E
+    E --> F
+    F --> G
+    G --> H
+    H --> I
+    I --> J
+
+    J --> K
+    J --> L
+    J --> M
+
+    G -. Invalid Evidence .-> X[Discard Finding]
+
+    style X fill:#ffdddd,stroke:#cc0000
+```
+
+### Review Workflow
+```mermaid
+flowchart LR
+
+AI[AI Findings]
+
+Advisor[Advisor]
+
+Contest[Contest]
+
+Leader[Team Leader]
+
+Decision{Decision}
+
+Active[Active]
+
+Overturned[Overturned]
+
+AI --> Advisor
+Advisor --> Contest
+Contest --> Leader
+Leader --> Decision
+
+Decision --> Active
+Decision --> Overturned
+```
+
+### Validation Pipeline
+```mermaid
+flowchart LR
+
+LLM[Gemini Analysis]
+
+Quote[Quote]
+
+Speaker[Speaker]
+
+Timestamp[Timestamp]
+
+Evidence[Evidence Validator]
+
+Facts[Company Facts Validator]
+
+Persist[(Persist)]
+
+Discard[Discard]
+
+LLM --> Quote
+LLM --> Speaker
+LLM --> Timestamp
+
+Quote --> Evidence
+Speaker --> Evidence
+Timestamp --> Evidence
+
+Evidence --> Facts
+
+Facts -->|Valid| Persist
+Facts -->|Invalid| Discard
+```

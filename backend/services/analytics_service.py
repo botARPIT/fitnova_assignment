@@ -18,7 +18,6 @@ from schemas.analytics import (
     AdvisorLeaderboardEntry,
     AdvisorSummary,
     FlagSummary,
-    ObjectiveMetrics,
     OrgOverviewOut,
     OrgOverviewSummary,
     PeriodOut,
@@ -104,7 +103,6 @@ class AnalyticsService:
             advisor_id=advisor_id,
         )
         stats = data["stats"]
-        obj = data["objective"]
         trend = await repo.get_score_trends(
             self._pool,
             self._org_id,
@@ -125,13 +123,6 @@ class AnalyticsService:
                 failed_calls=self._safe_int(stats.get("failed_calls")),
                 avg_score=self._safe_float(stats.get("avg_score")),
                 active_advisors=self._safe_int(stats.get("active_advisors")),
-            ),
-            objective_metrics=ObjectiveMetrics(
-                avg_duration_sec=self._safe_float(obj.get("avg_duration_sec")),
-                avg_talk_ratio=self._safe_float(obj.get("avg_talk_ratio")),
-                trial_booking_rate=self._safe_float(obj.get("trial_booking_rate")),
-                avg_interruptions=self._safe_float(obj.get("avg_interruptions")),
-                avg_questions_asked=self._safe_float(obj.get("avg_questions_asked")),
             ),
             top_flags=self._flag_list(data.get("top_flags", []), total_calls),
             score_trend=self._trend_points(trend),

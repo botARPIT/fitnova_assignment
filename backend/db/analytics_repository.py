@@ -107,31 +107,8 @@ async def get_org_overview(
         *params, _uuid(org_id),
     )
 
-    obj_idx = idx
-    obj_params = params[:]
-    objective = await pool.fetchrow(
-        f"""
-        SELECT
-            ROUND(AVG(c.duration_sec)::numeric, 2)::float as avg_duration_sec,
-            ROUND(AVG((r.scores->>'talk_ratio')::numeric)::numeric, 4)::float as avg_talk_ratio,
-            ROUND(
-                (COUNT(*) FILTER (
-                    WHERE r.flags @> '[{{"tag": "weak_or_missing_trial_booking"}}]'::jsonb
-                ))::numeric / NULLIF(COUNT(*), 0) * 100, 2
-            )::float as trial_booking_rate,
-            ROUND(AVG((r.scores->>'interruptions')::numeric)::numeric, 2)::float as avg_interruptions,
-            ROUND(AVG((r.scores->>'questions_asked')::numeric)::numeric, 2)::float as avg_questions_asked
-        FROM calls c
-        JOIN reports r ON r.call_id = c.id
-        LEFT JOIN advisors a ON a.id = c.advisor_id
-        WHERE c.organization_id = ${obj_idx} AND {time_clause} {team_clause} {advisor_clause}
-          AND c.status = 'completed'
-        """,
-        *obj_params, _uuid(org_id),
-    )
-
     flag_idx = idx
-    flag_params = obj_params[:]
+    flag_params = params[:]
     flags = await pool.fetch(
         f"""
         SELECT flag->>'tag' as tag, COUNT(*)::int as count
@@ -149,7 +126,6 @@ async def get_org_overview(
 
     return {
         "stats": dict(stats),
-        "objective": dict(objective) if objective else {},
         "top_flags": [dict(r) for r in flags],
     }
 

@@ -17,18 +17,16 @@ async def upload_call(
     advisor_id: str = Query(None),
     organization_id: str = Query(None),
 ):
-    """Full pipeline: upload → transcribe → analyze → store.
-
-    Idempotent: uploading the same file twice returns the existing result.
-    Organization_id defaults to FitNova's default org.
-    """
+    """Submit a call for background processing or return a reused result."""
     pipeline = request.app.state.pipeline_service
     try:
-        result = await pipeline.process_call(
+        result, ctx, raw_bytes = await pipeline.submit_call(
             file=file,
             advisor_id=advisor_id,
             organization_id=organization_id,
         )
+        if ctx and raw_bytes:
+            pipeline.schedule_submitted_call(ctx, raw_bytes)
         return result
     except CallConflictError as e:
         raise HTTPException(

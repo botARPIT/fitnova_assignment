@@ -13,14 +13,6 @@ class PeriodOut(BaseModel):
     to: datetime | None = None
 
 
-class ObjectiveMetrics(BaseModel):
-    avg_duration_sec: float = 0
-    avg_talk_ratio: float = 0
-    trial_booking_rate: float = 0
-    avg_interruptions: float = 0
-    avg_questions_asked: float = 0
-
-
 class FlagSummary(BaseModel):
     tag: str
     count: int
@@ -44,7 +36,6 @@ class OrgOverviewOut(BaseModel):
     generated_at: datetime = None
     period: PeriodOut = None
     summary: OrgOverviewSummary = None
-    objective_metrics: ObjectiveMetrics = None
     top_flags: list[FlagSummary] = []
     score_trend: list[TrendPoint] = []
 

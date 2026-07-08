@@ -41,6 +41,19 @@ export function normalizeCallDetail(call) {
   }
 }
 
+export function normalizeUploadResult(result) {
+  if (!result || typeof result !== 'object') return result
+
+  return {
+    ...result,
+    call_id: result.call_id ?? result.id,
+    flags: Array.isArray(result.flags) ? result.flags.map(normalizeFlag) : [],
+    discarded_flags: Array.isArray(result.discarded_flags)
+      ? result.discarded_flags.map(normalizeFlag)
+      : [],
+  }
+}
+
 export function listCalls({ advisor_id, team_id, status, limit, offset } = {}) {
   const params = new URLSearchParams()
   if (advisor_id) params.set('advisor_id', advisor_id)
@@ -64,5 +77,5 @@ export function uploadCall(file, advisorId) {
   const form = new FormData()
   form.append('file', file)
   const params = advisorId ? `?advisor_id=${advisorId}` : ''
-  return post(`/api/calls/upload${params}`, form)
+  return post(`/api/calls/upload${params}`, form).then(normalizeUploadResult)
 }

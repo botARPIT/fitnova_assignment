@@ -11,6 +11,7 @@ Idempotency flow:
 
 import logging
 import time
+import asyncio
 
 from fastapi import UploadFile
 
@@ -118,6 +119,98 @@ class PipelineService:
             else:
                 log.error("Unexpected pipeline error: %s", type(e).__name__)
             raise PersistenceError("Unexpected pipeline failure.") from e
+
+    async def submit_call(
+        self,
+        file: UploadFile,
+        advisor_id: str | None = None,
+        organization_id: str | None = None,
+    ) -> tuple[dict, PipelineContext | None, bytes | None]:
+        """Create or reuse a call and return immediately for polling-based UX.
+
+        Returns:
+            (response, ctx, raw_bytes)
+            - completed/reused responses return (response, None, None)
+            - processing responses return (response, ctx, raw_bytes) so the caller
+              can schedule the background pipeline task
+        """
+        ctx = self._build_context(advisor_id, organization_id)
+        pool = await get_pool()
+
+        self._validate_extension(file.filename)
+        raw_bytes = await self._read_and_validate_audio(file)
+        await self._ingest_upload(ctx, raw_bytes, file.filename)
+
+        call_result = await persistence_service.create_call(pool, ctx)
+        existing_status = call_result["status"]
+        is_new = call_result["is_new"]
+
+        if existing_status in REUSE_STATUSES and not is_new:
+            return await self._reuse_completed(pool, ctx), None, None
+
+        if existing_status in CONFLICT_STATUSES and not is_new:
+            return {
+                "call_id": ctx.call_id,
+                "status": "processing",
+                "idempotent_reuse": False,
+                "reused": False,
+            }, None, None
+
+        if existing_status in RETRY_STATUSES or existing_status == "uploaded" or is_new:
+            await self._mark_processing(pool, ctx.call_id)
+
+        return {
+            "call_id": ctx.call_id,
+            "status": "processing",
+            "idempotent_reuse": False,
+            "reused": False,
+        }, ctx, raw_bytes
+
+    async def process_submitted_call(self, ctx: PipelineContext, raw_bytes: bytes) -> None:
+        """Run the heavy pipeline stages for a previously submitted call."""
+        started_at = time.time()
+        pool = await get_pool()
+
+        try:
+            await self._run_transcription(pool, ctx, raw_bytes)
+            await self._validate_transcription_output(pool, ctx)
+            await self._run_speaker_repair(pool, ctx)
+            await self._validate_repaired_conversation(pool, ctx)
+            await self._validate_analysis_input(pool, ctx)
+            await self._run_analysis(pool, ctx)
+            self._finalize_flags(ctx)
+            self._set_metadata(ctx)
+
+            ctx.timings.total_ms = int((time.time() - started_at) * 1000)
+            await self._persist_results(pool, ctx)
+        except (AudioValidationError, IngestionError, TranscriptionError,
+                SpeakerRepairError, ConversationValidationError, AnalysisError,
+                PersistenceError):
+            raise
+        except Exception as e:
+            if app_settings.log_tracebacks:
+                log.error(
+                    "Unexpected background pipeline error for call %s: %s",
+                    ctx.call_id,
+                    str(e) or type(e).__name__,
+                    exc_info=True,
+                )
+            else:
+                log.error(
+                    "Unexpected background pipeline error for call %s: %s",
+                    ctx.call_id,
+                    type(e).__name__,
+                )
+            await persistence_service.mark_failed(
+                pool,
+                ctx,
+                "Unexpected pipeline failure.",
+                failed_stage=FAILED_STAGE_VALIDATION,
+            )
+
+    def schedule_submitted_call(self, ctx: PipelineContext, raw_bytes: bytes) -> None:
+        """Schedule background execution for an already-submitted call."""
+        asyncio.create_task(self.process_submitted_call(ctx, raw_bytes))
 
     def _build_context(
         self,

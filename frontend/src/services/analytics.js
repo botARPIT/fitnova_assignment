@@ -11,7 +11,6 @@ function normalizeOverview(data) {
     avg_score: summary.avg_score ?? 0,
     active_advisors: summary.active_advisors ?? 0,
     top_flags: data?.top_flags || [],
-    objective_metrics: data?.objective_metrics || {},
     score_trend: data?.score_trend || [],
   }
 }
