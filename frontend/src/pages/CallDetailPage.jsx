@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useParams } from 'react-router-dom'
 import { useCall } from '../hooks/useCall'
+import { useAdvisors } from '../hooks/useTeams'
 import ScoreGauge from '../components/common/ScoreGauge'
 import FlagCard from '../components/common/FlagCard'
 import TranscriptViewer from '../components/common/TranscriptViewer'
@@ -108,17 +109,23 @@ const SEVERITY_ORDER = {
   minor: 1,
 }
 
-const ADVISORS = [
-  { id: '00000000-0000-0000-0000-000000000100', name: 'Saad Khan (Advisor)', role: 'advisor' },
-  { id: '00000000-0000-0000-0000-000000000101', name: 'Rohan Mehta (Advisor)', role: 'advisor' },
-  { id: '00000000-0000-0000-0000-000000000102', name: 'Priya Sharma (Team Leader)', role: 'team_leader' },
-  { id: '00000000-0000-0000-0000-000000000103', name: 'Arjun Patel (Advisor)', role: 'advisor' },
-  { id: '00000000-0000-0000-0000-000000000104', name: 'Neha Gupta (Team Leader)', role: 'team_leader' },
-  { id: '00000000-0000-0000-0000-000000000105', name: 'Vikram Singh (Director)', role: 'director' },
-]
-
 function prettifyTag(tag = '') {
   return tag.replace(/_/g, ' ').replace(/\b\w/g, (char) => char.toUpperCase())
+}
+
+function formatActorLabel(actor = {}) {
+  const baseName = actor.name || 'Unknown'
+  const role = actor.role ? prettifyTag(actor.role) : ''
+  return role ? `${baseName} (${role})` : baseName
+}
+
+function getApiErrorMessage(error, fallback = 'Request failed') {
+  const detail = error?.detail
+  if (typeof detail === 'string' && detail) return detail
+  if (detail && typeof detail === 'object') {
+    return detail.detail || detail.message || fallback
+  }
+  return error?.message || fallback
 }
 
 function getTagMeta(tag = '') {
@@ -234,7 +241,7 @@ function getDimensionSummary(dim, score, relatedGroups) {
   return count > 0 ? `${count} linked finding${count === 1 ? '' : 's'}.` : 'No linked findings.'
 }
 
-function ReviewCard({ review, actingAdvisorId, onResolve }) {
+function ReviewCard({ review, actingAdvisorId, canResolve, onResolve }) {
   const [decision, setDecision] = useState('accepted')
   const [reason, setReason] = useState('')
   const [submitting, setSubmitting] = useState(false)
@@ -252,7 +259,7 @@ function ReviewCard({ review, actingAdvisorId, onResolve }) {
       await onResolve(review.id, decision, reason)
       setReason('')
     } catch (e) {
-      setError(e.detail || e.message || 'Failed to resolve review')
+      setError(getApiErrorMessage(e, 'Failed to resolve review'))
     } finally {
       setSubmitting(false)
     }
@@ -279,7 +286,7 @@ function ReviewCard({ review, actingAdvisorId, onResolve }) {
       <div className={styles.reviewContent}>
         <div className={styles.reviewField}>
           <span className={styles.fieldLabel}>Contested By (Advisor):</span>
-          <span className={styles.fieldValue}>{review.advisor_id}</span>
+          <span className={styles.fieldValue}>{review.advisor_name || 'Advisor not found'}</span>
         </div>
         <div className={styles.reviewField}>
           <span className={styles.fieldLabel}>Contest Reason:</span>
@@ -289,7 +296,7 @@ function ReviewCard({ review, actingAdvisorId, onResolve }) {
           <>
             <div className={styles.reviewField}>
               <span className={styles.fieldLabel}>Resolved By (Team Leader):</span>
-              <span className={styles.fieldValue}>{review.team_leader_id}</span>
+              <span className={styles.fieldValue}>{review.team_leader_name || 'Team leader not found'}</span>
             </div>
             <div className={styles.reviewField}>
               <span className={styles.fieldLabel}>Decision Reason:</span>
@@ -299,7 +306,7 @@ function ReviewCard({ review, actingAdvisorId, onResolve }) {
         )}
       </div>
 
-      {review.status === 'PENDING' && (
+      {review.status === 'PENDING' && canResolve && (
         <form className={styles.resolveForm} onSubmit={handleSubmit}>
           <h4 className={styles.resolveTitle}>Resolve Contest</h4>
           <div className={styles.formGrid}>
@@ -348,6 +355,7 @@ export default function CallDetailPage() {
   const [reviewsLoading, setReviewsLoading] = useState(false)
   const [reviewsError, setReviewsError] = useState(null)
   const [actingAdvisorId, setActingAdvisorId] = useState('')
+  const { advisors: actors, error: actorsError } = useAdvisors()
 
   const fetchReviews = useCallback(async () => {
     setReviewsLoading(true)
@@ -356,7 +364,7 @@ export default function CallDetailPage() {
       const data = await listReviews(callId)
       setReviews(data.reviews || [])
     } catch (e) {
-      setReviewsError(e.detail || e.message || 'Failed to load reviews')
+      setReviewsError(getApiErrorMessage(e, 'Failed to load reviews'))
     } finally {
       setReviewsLoading(false)
     }
@@ -403,6 +411,14 @@ export default function CallDetailPage() {
     : 'Speaker labels: STT raw fallback'
   const groupedFindings = buildGroupedFindings(flags)
   const timelineItems = buildTimelineItems(groupedFindings)
+  const actorOptions = actors.map((actor) => ({
+    id: actor.id,
+    label: formatActorLabel(actor),
+  }))
+  const selectedActor = actors.find((actor) => actor.id === actingAdvisorId) || null
+  const selectedActorRole = selectedActor?.role || ''
+  const canContest = selectedActorRole === 'advisor' && actingAdvisorId === call.advisor_id
+  const canResolve = selectedActorRole === 'team_leader' || selectedActorRole === 'director'
   const groupedByDimension = Object.keys(DIMENSION_META).reduce((acc, key) => {
     acc[key] = groupedFindings.filter((group) => group.dimension === key)
     return acc
@@ -426,7 +442,7 @@ export default function CallDetailPage() {
       await refetch()
       await fetchReviews()
     } catch (e) {
-      setContestMsg(`Error: ${e.detail || e.message}`)
+      setContestMsg(`Error: ${getApiErrorMessage(e, 'Failed to contest flag')}`)
       setContestFlag(null)
     }
   }
@@ -475,13 +491,14 @@ export default function CallDetailPage() {
               onChange={(e) => setActingAdvisorId(e.target.value)}
             >
               <option value="">Select Actor...</option>
-              {ADVISORS.map((advisor) => (
-                <option key={advisor.id} value={advisor.id}>
-                  {advisor.name}
+              {actorOptions.map((actor) => (
+                <option key={actor.id} value={actor.id}>
+                  {actor.label}
                 </option>
               ))}
             </select>
           </div>
+          {actorsError && <span className={styles.metaItem}>Actor list unavailable</span>}
           <div className={styles.meta}>
             {call.duration_sec && (
               <span className={styles.metaItem}>⏱ {formatTime(call.duration_sec)}</span>
@@ -593,7 +610,7 @@ export default function CallDetailPage() {
                       <span className={styles.groupFooterText}>
                         Linked to {DIMENSION_META[group.dimension]?.title || group.dimension.replace(/_/g, ' ')}
                       </span>
-                      {group.primaryFlag && (!group.primaryFlag.status || group.primaryFlag.status === 'ACTIVE') && (
+                      {group.primaryFlag && canContest && (!group.primaryFlag.status || group.primaryFlag.status === 'ACTIVE') && (
                         <button className={styles.groupContestBtn} onClick={() => handleContest(group.primaryFlag)}>
                           Contest Issue
                         </button>
@@ -734,6 +751,7 @@ export default function CallDetailPage() {
                 key={review.id}
                 review={review}
                 actingAdvisorId={actingAdvisorId}
+                canResolve={canResolve}
                 onResolve={handleResolveReview}
               />
             ))

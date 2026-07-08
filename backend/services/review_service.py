@@ -35,6 +35,14 @@ async def _get_advisor_role(pool, advisor_id: str) -> str | None:
     return advisor.get("role", "advisor")
 
 
+async def _get_call_advisor_id(pool, call_id: str) -> str | None:
+    from db.call_repository import get_call
+    call = await get_call(pool, call_id)
+    if not call or not call.get("advisor_id"):
+        return None
+    return str(call["advisor_id"])
+
+
 async def contest_flag(
     pool,
     *,
@@ -69,11 +77,29 @@ async def contest_flag(
     # 3. Verify advisor exists and is allowed to contest
     role = await _get_advisor_role(pool, advisor_id)
     if role is None:
-        raise ReviewNotFoundError(f"Advisor {advisor_id} not found")
+        raise ReviewNotFoundError({
+            "code": "advisor_not_found",
+            "entity": "advisor",
+            "entity_id": advisor_id,
+            "detail": "Advisor not found",
+        })
     if role not in CONTESTOR_ROLES:
         raise ReviewPermissionError(
             f"Advisor {advisor_id} has role '{role}', "
             f"but only {CONTESTOR_ROLES} can contest flags"
+        )
+
+    call_advisor_id = await _get_call_advisor_id(pool, call_id)
+    if call_advisor_id is None:
+        raise ReviewNotFoundError({
+            "code": "call_advisor_not_found",
+            "entity": "call",
+            "entity_id": call_id,
+            "detail": "Call advisor not found",
+        })
+    if str(advisor_id) != call_advisor_id:
+        raise ReviewPermissionError(
+            "Only the advisor who owns this call can contest its flags"
         )
 
     # 4. Create review
@@ -118,7 +144,12 @@ async def resolve_review(
     # 2. Verify resolver has appropriate role
     role = await _get_advisor_role(pool, team_leader_id)
     if role is None:
-        raise ReviewNotFoundError(f"Advisor {team_leader_id} not found")
+        raise ReviewNotFoundError({
+            "code": "reviewer_not_found",
+            "entity": "team_leader",
+            "entity_id": team_leader_id,
+            "detail": "Team leader not found",
+        })
     if role not in RESOLVER_ROLES:
         raise ReviewPermissionError(
             f"Advisor {team_leader_id} has role '{role}', "

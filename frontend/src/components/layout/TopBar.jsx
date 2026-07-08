@@ -2,7 +2,7 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import styles from './TopBar.module.css'
 
 const BREADCRUMB_LABELS = {
-  '': 'Dashboard',
+  dashboard: 'Dashboard',
   'calls': 'Calls',
   'upload': 'Upload',
   'team': 'Team',
@@ -16,7 +16,7 @@ export default function TopBar({ onRefresh }) {
   return (
     <header className={styles.topbar}>
       <div className={styles.breadcrumbs}>
-        <button className={styles.homeLink} onClick={() => navigate('/')}>
+        <button className={styles.homeLink} onClick={() => navigate('/dashboard')}>
           FitNova
         </button>
         {segments.map((seg, i) => (

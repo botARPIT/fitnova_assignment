@@ -66,7 +66,7 @@ class ReviewPermissionError(PipelineError):
 
 class ReviewNotFoundError(PipelineError):
     """Raised when a review or flag is not found."""
-    def __init__(self, reason: str = "Review not found"):
+    def __init__(self, reason="Review not found"):
         super().__init__(status_code=404, detail=reason)
 
 
