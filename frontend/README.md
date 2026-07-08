@@ -1,16 +1,41 @@
-# React + Vite
+# Frontend Guide
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+## Scope
+The frontend is a React + Vite dashboard for:
+- upload and analyze
+- recent calls
+- org overview
+- team/advisor analytics
+- call detail, transcript review, contestation, and review resolution
 
-Currently, two official plugins are available:
+## Routes
+- `/` — org dashboard
+- `/calls` — call list
+- `/calls/:callId` — call detail, transcript, flags, and reviews
+- `/upload` — upload and analyze a call
+- `/team` — team and advisor analytics
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## Run Locally
+From `frontend/`:
 
-## React Compiler
+```bash
+npm install
+npm run dev
+```
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Backend Dependency
+Set the backend API base URL with a Vite env var:
 
-## Expanding the Oxlint configuration
+```env
+VITE_API_BASE_URL=http://localhost:8000
+```
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and Oxlint's TypeScript related rules in your project.
+If `VITE_API_BASE_URL` is omitted, the frontend falls back to same-origin relative requests.
+
+Make sure the backend and database are already running before using the dashboard.
+
+## Review Workflow Note
+This submission does not implement auth. For review actions, the call detail page uses a manual “Acting As” selector populated with seeded advisor/team-leader/director identities so the backend can receive `X-Advisor-ID`.
+
+## Current Focus
+The frontend is optimized for demonstrating the end-to-end call workflow and the review loop rather than for final production polish.

@@ -1,7 +1,6 @@
 """
 FitNova Call Analysis — Phase 2
-Full pipeline: upload → transcribe → repair → analyze → persist
-Plus legacy /transcribe and /flag endpoints.
+Full pipeline: upload → transcribe → repair → analyze → persist.
 """
 
 import logging
@@ -10,29 +9,31 @@ from contextlib import asynccontextmanager
 import yaml
 import uvicorn
 from fastapi import FastAPI, Request
-from fastapi.middleware.cors import CORSMiddleware
+from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
+from fastapi.middleware.cors import CORSMiddleware
 
 from config import settings
 from db.connection import init_pool, close_pool
 from db import run_migrations
+from logging_config import configure_logging, safe_exception_text
 from errors import (
     AudioValidationError, IngestionError, TranscriptionError,
     SpeakerRepairError, ConversationValidationError, AnalysisError,
-    PersistenceError, PipelineError,
+    PersistenceError, PipelineError, CallConflictError,
     ReviewError, ReviewPermissionError, ReviewNotFoundError,
 )
-from storage.local_store import LocalStore
-from services.transcription_service import TranscriptionService
+from services.call_service import CallService
 from services.pipeline_service import PipelineService
 from services.analytics_service import AnalyticsService
-from routers import transcribe, flag, calls, org, analytics, reviews
+from services.org_service import OrgService
+from routers import calls, org, analytics, reviews
 
 # ---------------------------------------------------------------------------
 # Logging
 # ---------------------------------------------------------------------------
 
-logging.basicConfig(level=settings.log_level.upper())
+configure_logging(settings)
 log = logging.getLogger("fitnova")
 
 
@@ -62,6 +63,7 @@ HANDLED_ERRORS = [
     (ConversationValidationError, 422),
     (AnalysisError, 502),
     (PersistenceError, 500),
+    (CallConflictError, 409),
     (ReviewError, 400),
     (ReviewPermissionError, 403),
     (ReviewNotFoundError, 404),
@@ -79,6 +81,28 @@ def register_error_handlers(app: FastAPI):
             return handler
         app.add_exception_handler(exc_cls, make_handler(status))
 
+    @app.exception_handler(RequestValidationError)
+    async def handle_request_validation_error(_request: Request, exc: RequestValidationError):
+        if settings.log_validation_payloads:
+            log.warning("Request validation failed: %s", exc.errors())
+        else:
+            log.warning("Request validation failed")
+        return JSONResponse(
+            status_code=422,
+            content={"detail": "Invalid request payload."},
+        )
+
+    @app.exception_handler(Exception)
+    async def handle_unexpected_error(_request: Request, exc: Exception):
+        if settings.log_tracebacks:
+            log.error("Unhandled application error: %s", safe_exception_text(exc, settings), exc_info=True)
+        else:
+            log.error("Unhandled application error: %s", safe_exception_text(exc, settings))
+        return JSONResponse(
+            status_code=500,
+            content={"detail": "Internal server error."},
+        )
+
 
 # ---------------------------------------------------------------------------
 # Lifespan — dependency injection via app.state
@@ -94,18 +118,13 @@ async def lifespan(app: FastAPI):
     app.state.settings = settings
     app.state.rubric = rubric
     app.state.company_facts = company_facts
-    app.state.store = LocalStore(
-        upload_dir=settings.upload_dir,
-        transcripts_dir=settings.transcripts_dir,
-    )
-    app.state.transcription_service = TranscriptionService(settings)
-
     # Pipeline orchestration
     app.state.pipeline_service = PipelineService(
         settings=settings,
         rubric=rubric,
         company_facts=company_facts,
     )
+    app.state.transcription_service = app.state.pipeline_service.stt
 
     # Database pool
     pool = await init_pool(settings.database_url)
@@ -121,13 +140,15 @@ async def lifespan(app: FastAPI):
         pool=pool,
         org_id=settings.default_org_id,
     )
+    app.state.call_service = CallService(pool=pool)
+    app.state.org_service = OrgService(pool=pool)
     log.info("AnalyticsService initialized ✓")
 
     log.info("FitNova started ✓")
     yield
 
     # ── Shutdown ───────────────────────────────────────────────
-    app.state.transcription_service.cleanup()
+    app.state.pipeline_service.stt.cleanup()
     await close_pool()
     log.info("FitNova shutdown complete")
 
@@ -152,8 +173,6 @@ app.add_middleware(
 register_error_handlers(app)
 
 # ── Register routers ──────────────────────────────────────────
-app.include_router(transcribe.router)   # legacy POST /transcribe
-app.include_router(flag.router)         # legacy POST /flag
 app.include_router(calls.router)        # POST /api/calls/upload, GET /api/calls, GET /api/calls/{id}
 app.include_router(org.router)          # GET /api/org/teams, GET /api/org/advisors
 app.include_router(analytics.router)    # GET /api/analytics/*

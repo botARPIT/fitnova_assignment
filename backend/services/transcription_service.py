@@ -1,5 +1,6 @@
 """Transcription engines: WhisperX (local GPU) and Deepgram (cloud API)."""
 
+import asyncio
 import logging
 import time
 
@@ -7,6 +8,8 @@ import torch
 from deepgram import DeepgramClient
 
 from schemas.transcript import Turn
+from utils.deepgram_retry import is_deepgram_retryable
+from utils.retry import retry_async
 
 log = logging.getLogger("fitnova.transcription")
 
@@ -111,17 +114,35 @@ class TranscriptionService:
 
     # ── Deepgram (cloud) ───────────────────────────────────────
 
-    def transcribe_deepgram(self, raw_bytes: bytes) -> tuple[list[Turn], float, object]:
-        """Run Deepgram Nova-2-phonecall transcription with diarization."""
+    async def transcribe_deepgram(self, raw_bytes: bytes) -> tuple[list[Turn], float, object]:
+        """Run Deepgram Nova-2-phonecall transcription with diarization.
+
+        The Deepgram API call is wrapped in retry logic for transient failures.
+        Transcript parsing is excluded from the retry boundary.
+        """
         dg = DeepgramClient(api_key=self._settings.deepgram_api_key)
 
-        response = dg.listen.v1.media.transcribe_file(
-            request=raw_bytes,
-            model="nova-3",
-            smart_format=True,
-            diarize_model="latest",
-            utterances=True,
-            detect_language=True,
+        max_retries = getattr(self._settings, "deepgram_max_retries", 3)
+        base_delay = getattr(self._settings, "retry_base_delay_ms", 1000) / 1000.0
+
+        async def _call_deepgram():
+            return await asyncio.to_thread(
+                dg.listen.v1.media.transcribe_file,
+                request=raw_bytes,
+                model=self._settings.deepgram_model,
+                smart_format=True,
+                diarize_model=self._settings.deepgram_diarize_model,
+                utterances=True,
+                detect_language=True,
+            )
+
+        response = await retry_async(
+            operation=_call_deepgram,
+            is_retryable=is_deepgram_retryable,
+            max_attempts=max_retries,
+            base_delay=base_delay,
+            vendor="deepgram",
+            operation_name="transcription",
         )
 
         result = response.results

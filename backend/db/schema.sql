@@ -30,11 +30,16 @@ CREATE TABLE calls (
     organization_id UUID NOT NULL REFERENCES organizations(id),
     advisor_id UUID REFERENCES advisors(id),
     audio_path TEXT NOT NULL,
+    file_sha256 TEXT,
+    source TEXT NOT NULL DEFAULT 'FILE_UPLOAD',
+    external_call_id TEXT,
+    ingestion_fingerprint TEXT,
     duration_sec FLOAT,
     language TEXT,
     status TEXT NOT NULL DEFAULT 'uploaded'
-        CHECK (status IN ('uploaded', 'processing', 'completed', 'failed')),
+        CHECK (status IN ('uploaded', 'processing', 'completed', 'failed', 'cancelled')),
     error_message TEXT,
+    failed_stage TEXT,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     completed_at TIMESTAMPTZ
 );
@@ -79,19 +84,19 @@ CREATE TABLE flag_reviews (
 -- === SEED DATA ===
 
 INSERT INTO organizations (id, name) VALUES
-    ('00000000-0000-0000-0000-000000000001', 'FitNova');
+    ('11111111-1111-1111-1111-111111111111', 'FitNova');
 
 INSERT INTO teams (id, organization_id, name) VALUES
-    ('00000000-0000-0000-0000-000000000010', '00000000-0000-0000-0000-000000000001', 'Pod Alpha'),
-    ('00000000-0000-0000-0000-000000000011', '00000000-0000-0000-0000-000000000001', 'Pod Beta');
+    ('22222222-2222-2222-2222-222222222221', '11111111-1111-1111-1111-111111111111', 'Pod Alpha'),
+    ('22222222-2222-2222-2222-222222222222', '11111111-1111-1111-1111-111111111111', 'Pod Beta');
 
 INSERT INTO advisors (id, team_id, name, role) VALUES
-    ('00000000-0000-0000-0000-000000000100', '00000000-0000-0000-0000-000000000010', 'Saad Khan', 'advisor'),
-    ('00000000-0000-0000-0000-000000000101', '00000000-0000-0000-0000-000000000010', 'Rohan Mehta', 'advisor'),
-    ('00000000-0000-0000-0000-000000000102', '00000000-0000-0000-0000-000000000010', 'Priya Sharma', 'team_leader'),
-    ('00000000-0000-0000-0000-000000000103', '00000000-0000-0000-0000-000000000011', 'Arjun Patel', 'advisor'),
-    ('00000000-0000-0000-0000-000000000104', '00000000-0000-0000-0000-000000000011', 'Neha Gupta', 'team_leader'),
-    ('00000000-0000-0000-0000-000000000105', NULL, 'Vikram Singh', 'director');
+    ('33333333-3333-3333-3333-333333333331', '22222222-2222-2222-2222-222222222221', 'Saad Khan', 'advisor'),
+    ('33333333-3333-3333-3333-333333333332', '22222222-2222-2222-2222-222222222221', 'Rohan Mehta', 'advisor'),
+    ('33333333-3333-3333-3333-333333333333', '22222222-2222-2222-2222-222222222221', 'Priya Sharma', 'team_leader'),
+    ('33333333-3333-3333-3333-333333333334', '22222222-2222-2222-2222-222222222222', 'Arjun Patel', 'advisor'),
+    ('33333333-3333-3333-3333-333333333335', '22222222-2222-2222-2222-222222222222', 'Neha Gupta', 'team_leader'),
+    ('33333333-3333-3333-3333-333333333336', NULL, 'Vikram Singh', 'director');
 
 -- === INDEXES ===
 
@@ -99,6 +104,8 @@ CREATE INDEX idx_calls_org ON calls(organization_id);
 CREATE INDEX idx_calls_advisor ON calls(advisor_id);
 CREATE INDEX idx_calls_status ON calls(status);
 CREATE INDEX idx_calls_created ON calls(created_at DESC);
+CREATE UNIQUE INDEX idx_calls_org_file_sha256 ON calls(organization_id, file_sha256) WHERE file_sha256 IS NOT NULL;
+CREATE UNIQUE INDEX idx_calls_ingestion_fingerprint ON calls(ingestion_fingerprint) WHERE ingestion_fingerprint IS NOT NULL;
 CREATE INDEX idx_flag_reviews_call ON flag_reviews(call_id);
 CREATE INDEX idx_flag_reviews_flag_id ON flag_reviews(flag_id);
 CREATE INDEX idx_flag_reviews_status ON flag_reviews(status);

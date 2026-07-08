@@ -41,17 +41,20 @@
   border-radius: var(--border-radius-sm);
 }
 
-.high {
+.high,
+.critical {
   background: var(--error-container);
   color: var(--on-error-container);
 }
 
-.medium {
+.medium,
+.major {
   background: #fef3c7;
   color: #b45309;
 }
 
-.low {
+.low,
+.minor {
   background: var(--surface-container-high);
   color: var(--on-surface-variant);
 }
@@ -124,4 +127,30 @@
   border-color: var(--primary);
   color: var(--primary);
   background: var(--surface-container-low);
+}
+
+.status {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 3px 10px;
+  border-radius: var(--border-radius-sm);
+}
+
+.contested {
+  background: var(--secondary-container);
+  color: var(--on-secondary-container);
+}
+
+.overturned {
+  background: #fff5f5;
+  color: var(--error);
+  border: 1px solid var(--error-container);
+}
+
+.activeBadge {
+  background: #f0fdf4;
+  color: #15803d;
+  border: 1px solid #bbf7d0;
 }

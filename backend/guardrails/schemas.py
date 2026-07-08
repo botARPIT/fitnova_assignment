@@ -91,7 +91,11 @@ class SpeakerRepairOutput(BaseModel):
 
 class DimensionScore(BaseModel):
     """Score for a single rubric dimension with supporting evidence."""
-    score: int = Field(ge=0, le=5, description="Score 0-5 per rubric definition")
+    score: float = Field(
+        ge=0,
+        le=5,
+        description="Score 0-5 per rubric definition. Fractional scores like 0.5 or 1.5 are allowed."
+    )
     evidence: str = Field(
         min_length=1,
         description="Brief justification — reference specific moments from the call"
@@ -116,7 +120,7 @@ class Flag(BaseModel):
     tag: IssueTag = Field(description="Issue type — must be from the fixed taxonomy")
     severity: Severity = Field(description="How serious this issue is")
     quote: str = Field(
-        min_length=5,
+        min_length=1,
         description="Exact verbatim quote from the transcript that shows this issue"
     )
     explanation: str = Field(
@@ -127,6 +131,13 @@ class Flag(BaseModel):
         ge=0,
         description="Start time (seconds) of the turn containing this quote"
     )
+
+    @field_validator("quote", "explanation", mode="before")
+    @classmethod
+    def strip_text_fields(cls, value):
+        if isinstance(value, str):
+            return value.strip()
+        return value
 
 
 class CallAnalysis(BaseModel):
@@ -160,3 +171,6 @@ class FlaggedFlag(BaseModel):
     timestamp: float
     match_score: Optional[float] = None
     discard_reason: Optional[str] = None
+    matched_turn_index: Optional[int] = None
+    matched_turn_speaker: Optional[str] = None
+    matched_turn_start: Optional[float] = None

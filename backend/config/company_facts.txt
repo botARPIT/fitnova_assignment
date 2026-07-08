@@ -1,40 +1,97 @@
 FitNova — Company Fact Sheet
-==============================
+============================
 
 About:
-FitNova is a Bangalore-based online platform for personalized fitness and wellness coaching.
-People discover programs online, but enrollment happens over the phone via tele-advisors.
+FitNova is a Bangalore-based hybrid fitness and wellness coaching platform.
+Leads are handled by tele-advisors over phone calls. The main goal of the sales call
+is to understand the lead properly and book a free trial session, not force an
+immediate payment.
 
-Programs & Pricing:
-- Starter Plan: ₹4,999/month — 3 sessions/week, group classes, basic nutrition plan
-- Pro Plan: ₹9,999/month — 5 sessions/week, 1-on-1 coaching, custom nutrition + progress tracking
-- Elite Plan: ₹17,999/month — Daily sessions, dedicated coach, physio access, meal prep guidance
-- All plans come with a FREE 7-day trial session (in-person or online) — no payment required upfront
+Customer Profile:
+- Working professionals trying to lose weight or build consistency
+- Beginners who need accountability and coaching support
+- Customers who have tried gyms or self-guided apps before without sticking to them
 
-Guarantees & Policies:
-- NO guaranteed results — advisors must never promise specific weight loss, muscle gain, or timelines
-- 7-day free trial with no obligation
-- Full refund within first 14 days if unsatisfied (after trial conversion)
-- No lock-in contracts — cancel anytime with 30-day notice
-- EMI options available on Pro and Elite plans (3/6/12 month EMI via partner banks)
+Discovery Topics Advisors Should Cover:
+- Fitness goals
+- Current routine
+- Schedule availability
+- Budget comfort
+- Injuries or health limitations
+- Online vs offline preference
 
-What Advisors Must Do:
-- Always start with needs discovery: understand the customer's fitness goals, schedule, budget, injuries
-- Recommend the plan that fits the customer's needs, not the most expensive one
-- Always book the free trial session before discussing pricing
-- Disclose all costs upfront — no hidden fees, no surprise charges
-- Never use pressure tactics or artificial urgency ("offer ends today", "only 2 slots left")
-- Let the customer speak — never talk over them or rush the conversation
+Plans & Pricing:
+- Basic: ₹4,999/month
+  - 3 sessions/week
+  - Small-group coaching
+  - Basic nutrition guidelines
+  - Weekly progress check-in
+  - Does NOT include dedicated 1-on-1 coaching
 
-Key Differentiators:
-- Certified coaches with 5+ years experience
-- AI-powered progress tracking dashboard for members
-- Flexible scheduling (morning/evening/weekend batches)
-- Both online and in-person options across 12 Bangalore centers
-- Community events and wellness workshops included with Pro and Elite plans
+- Pro: ₹9,999/month
+  - 5 sessions/week
+  - Dedicated 1-on-1 coach
+  - Custom nutrition plan
+  - Progress tracking dashboard
+  - WhatsApp support from coach
 
-Common Objections Advisors Should Handle:
-- "It's too expensive" → Highlight free trial, EMI options, and value per session
-- "I've tried gyms before, didn't work" → Emphasize 1-on-1 coaching vs self-guided gym
-- "I don't have time" → Flexible scheduling, 30-min express sessions available
-- "Can I think about it?" → Absolutely, no pressure. Suggest booking free trial with no commitment
+- Elite: ₹17,999/month
+  - 7 sessions/week
+  - Daily 1-on-1 sessions
+  - Dedicated nutritionist
+  - Physiotherapy consultation
+  - Priority support
+
+Trial:
+- All plans include a 7-day free trial
+- No credit card is required to book the free trial
+- Trial may be online or at an eligible center depending on location and slot availability
+
+Billing & Pricing Rules:
+- Billing is month-to-month
+- No long-term contract is required
+- EMI is available only on Pro and Elite plans
+- Advisors must disclose pricing honestly
+- Advisors must not invent hidden fees, fake discounts, or fake urgency
+
+Compliance Rules:
+- No guaranteed results
+- No exact promises like "lose 10 kg in 30 days"
+- No fake scarcity like "only 2 slots left today" unless actually approved and true
+- Costs must be disclosed honestly
+- Advisors should not casually dismiss injuries or medical concerns
+
+What Advisors Should Do:
+- Start with needs discovery before pitching plans
+- Recommend the most suitable plan, not automatically the most expensive one
+- Explain value before pushing pricing
+- Try to book a free trial before ending the call
+- Handle objections calmly and without pressure
+
+Common Objections:
+- "It's too expensive"
+  - Acknowledge budget concern
+  - Explain value
+  - Mention free trial
+  - Mention EMI only for Pro and Elite
+
+- "I don't have time"
+  - Explore schedule constraints
+  - Mention flexible slots where relevant
+  - Offer a practical trial slot
+
+- "I've tried gyms before"
+  - Acknowledge prior disappointment
+  - Explain FitNova's coaching and accountability angle
+  - Do not guarantee better results
+
+Locations:
+- Koramangala, Bangalore
+- Indiranagar, Bangalore
+- HSR Layout, Bangalore
+- Online coaching across India
+
+Working Hours:
+- Weekdays: 6 AM – 10 PM
+- Weekends: 7 AM – 8 PM
+- Timezone: IST

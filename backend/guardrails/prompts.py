@@ -47,12 +47,16 @@ RULES:
 6. Keep the original timestamps EXACTLY as-is.
 7. Do NOT merge adjacent turns — keep them as separate entries even if same speaker.
 
-OUTPUT FORMAT: Return a JSON array. Each element:
+OUTPUT FORMAT: Return a JSON object with this exact shape:
 {
-  "speaker": "Advisor" or "Customer",
-  "start": <original float>,
-  "end": <original float>,
-  "text": "<original text, unchanged>"
+  "turns": [
+    {
+      "speaker": "Advisor" or "Customer",
+      "start": <original float>,
+      "end": <original float>,
+      "text": "<original text, unchanged>"
+    }
+  ]
 }"""
 
 
@@ -112,7 +116,10 @@ Return a JSON object matching this EXACT schema:
 
 CRITICAL RULES:
 1. Score EVERY dimension. Use the rubric descriptions to calibrate.
+1a. Fractional scores in 0.5 increments are allowed when performance falls between rubric bands.
+1b. Reserve a score of 0 for complete absence of the behavior or a severe failure/violation. If there was any meaningful partial attempt, prefer 0.5 or 1+ instead of defaulting to 0.
 2. Every flag MUST include an exact verbatim quote from the transcript — copy-paste, do not paraphrase.
+2a. Prefer substantive quotes that actually demonstrate the issue. Avoid trivial closers or fillers such as "okay", "thanks", or "bye" unless they are the only direct evidence.
 3. timestamp must match the turn's start time from the transcript.
 4. Only flag issues you can directly support with a quote from the transcript.
 5. If the call is clean, return an empty flags list — do not force flags.
@@ -143,22 +150,84 @@ def _format_company_facts(facts: dict) -> str:
     co = facts.get("company", {})
     lines.append(f"Company: {co.get('name', 'N/A')} — {co.get('tagline', '')}")
     lines.append(f"Type: {co.get('type', 'N/A')}")
+    if co.get("headquarters"):
+        lines.append(f"Headquarters: {co.get('headquarters')}")
+    for item in co.get("operating_model", []):
+        lines.append(f"  • {item}")
     lines.append("")
+
+    customer_profile = facts.get("customer_profile", {})
+    if customer_profile:
+        lines.append("Customer Profile:")
+        for segment in customer_profile.get("primary_segments", []):
+            lines.append(f"  • Segment: {segment}")
+        for goal in customer_profile.get("common_goals", []):
+            lines.append(f"  • Common goal: {goal}")
+        for constraint in customer_profile.get("common_constraints", []):
+            lines.append(f"  • Common constraint: {constraint}")
+        lines.append("")
 
     lines.append("Plans & Pricing:")
     for plan_key, plan in facts.get("plans", {}).items():
         lines.append(f"  - {plan.get('name')}: ₹{plan.get('price_monthly')}/mo, "
                      f"{plan.get('sessions_per_week')} sessions/week, "
                      f"coach: {plan.get('coach_type')}")
+        if plan.get("session_format"):
+            lines.append(f"    Format: {plan.get('session_format')}")
         for feat in plan.get("features", []):
             lines.append(f"    • {feat}")
+        for support in plan.get("support", []):
+            lines.append(f"    Support: {support}")
+        for missing in plan.get("not_included", []):
+            lines.append(f"    Not included: {missing}")
         lines.append(f"    Trial: {plan.get('trial', 'N/A')}")
     lines.append("")
 
-    lines.append("Policies:")
-    for policy in facts.get("policies", []):
-        lines.append(f"  • {policy}")
-    lines.append("")
+    sales_process = facts.get("sales_process", {})
+    if sales_process:
+        lines.append("Sales Process:")
+        for topic in sales_process.get("required_discovery_topics", []):
+            lines.append(f"  • Required discovery topic: {topic}")
+        for step in sales_process.get("expected_flow", []):
+            lines.append(f"  • Expected flow: {step}")
+        lines.append("")
+
+    policies = facts.get("policies", {})
+    if isinstance(policies, dict):
+        lines.append("Policies:")
+        for section, entries in policies.items():
+            lines.append(f"  {section.replace('_', ' ').title()}:")
+            for entry in entries:
+                lines.append(f"    • {entry}")
+        lines.append("")
+    elif isinstance(policies, list):
+        lines.append("Policies:")
+        for policy in policies:
+            lines.append(f"  • {policy}")
+        lines.append("")
+
+    allowed_claims = facts.get("allowed_claims", [])
+    if allowed_claims:
+        lines.append("Allowed Claims:")
+        for claim in allowed_claims:
+            lines.append(f"  • {claim}")
+        lines.append("")
+
+    disallowed_claims = facts.get("disallowed_claims", [])
+    if disallowed_claims:
+        lines.append("Disallowed Claims:")
+        for claim in disallowed_claims:
+            lines.append(f"  • {claim}")
+        lines.append("")
+
+    objections = facts.get("common_objections", {})
+    if objections:
+        lines.append("Common Objections:")
+        for key, value in objections.items():
+            lines.append(f"  {key.title()}: {value.get('customer_signal', '')}")
+            for response in value.get("acceptable_response", []):
+                lines.append(f"    • {response}")
+        lines.append("")
 
     lines.append("Locations: " + ", ".join(facts.get("locations", [])))
     wh = facts.get("working_hours", {})

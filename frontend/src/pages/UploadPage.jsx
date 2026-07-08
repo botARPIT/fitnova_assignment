@@ -1,24 +1,22 @@
 import { useRef, useState, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useUpload } from '../hooks/useUpload'
+import { useTeams, useAdvisors } from '../hooks/useTeams'
 import ProgressIndicator from '../components/common/ProgressIndicator'
 import ErrorState from '../components/common/ErrorState'
 import { formatBytes } from '../utils/format'
 import styles from './UploadPage.module.css'
 
-const ENGINE_OPTIONS = [
-  { value: 'deepgram', label: 'Deepgram Nova-2', desc: 'Cloud API', icon: '☁️' },
-  { value: 'whisperx', label: 'WhisperX + Pyannote', desc: 'Local GPU', icon: '🖥️' },
-]
-
 export default function UploadPage() {
   const [file, setFile] = useState(null)
   const [dragOver, setDragOver] = useState(false)
-  const [engine, setEngine] = useState('deepgram')
-  const [advisorId, setAdvisorId] = useState('')
+  const [selectedTeamId, setSelectedTeamId] = useState('')
+  const [selectedAdvisorId, setSelectedAdvisorId] = useState('')
   const inputRef = useRef(null)
   const navigate = useNavigate()
   const { stage, result, error, upload, reset } = useUpload()
+  const { teams, loading: teamsLoading, error: teamsError } = useTeams()
+  const { advisors, loading: advisorsLoading, error: advisorsError } = useAdvisors(selectedTeamId)
 
   const handleFile = useCallback((f) => {
     if (!f) return
@@ -34,8 +32,8 @@ export default function UploadPage() {
   }, [handleFile])
 
   const handleUpload = async () => {
-    if (!file) return
-    await upload(file, advisorId || undefined)
+    if (!file || !selectedTeamId || !selectedAdvisorId) return
+    await upload(file, selectedAdvisorId)
   }
 
   const handleViewCall = () => {
@@ -57,20 +55,25 @@ export default function UploadPage() {
       {stage ? (
         <div className={styles.progressSection}>
           <ProgressIndicator currentStage={stage} />
-          <div className={styles.progressBar}>
-            <div className={styles.progressFill} style={{ width: `${result ? 100 : stage === 'processing' ? 40 : stage === 'analyzing' ? 70 : 20}%` }} />
-          </div>
+
           <p className={styles.progressText}>
             {stage === 'uploading' && 'Uploading audio file...'}
-            {stage === 'processing' && 'Transcribing and analyzing call...'}
-            {stage === 'analyzing' && 'Running quality analysis...'}
+            {stage === 'processing' && 'Backend is processing the call. This currently includes transcribing, speaker repair, and flagging.'}
             {stage === 'completed' && 'Analysis complete!'}
           </p>
+          {stage && stage !== 'completed' && (
+            <div className={styles.stageHint}>
+              Current backend state: <strong>{stage.replace(/_/g, ' ')}</strong>
+            </div>
+          )}
           {stage === 'completed' && result && (
             <div className={styles.resultSection}>
               <div className={styles.resultInfo}>
                 <span>Overall Score: <strong>{result.overall_score?.toFixed(1)}</strong></span>
                 <span>Flags: <strong>{result.flags?.length || 0}</strong></span>
+                {result.idempotent_reuse && (
+                  <span>Result: <strong>Reused previous analysis</strong></span>
+                )}
               </div>
               <div className={styles.resultActions}>
                 <button className={styles.primaryBtn} onClick={handleViewCall}>
@@ -85,23 +88,13 @@ export default function UploadPage() {
         </div>
       ) : (
         <>
-          <div className={styles.engineSelector}>
-            <label className={styles.engineLabel}>STT Engine</label>
-            <div className={styles.engineOptions}>
-              {ENGINE_OPTIONS.map(opt => (
-                <button
-                  key={opt.value}
-                  className={`${styles.engineBtn} ${engine === opt.value ? styles.engineActive : ''}`}
-                  onClick={() => setEngine(opt.value)}
-                >
-                  <span className={styles.engineIcon}>{opt.icon}</span>
-                  <div>
-                    <strong>{opt.label}</strong>
-                    <small>{opt.desc}</small>
-                  </div>
-                </button>
-              ))}
-            </div>
+          <div className={styles.runtimeNote}>
+            <span className={styles.runtimeBadge}>Active Pipeline</span>
+            <p>
+              Uploads run through the current production path:
+              <strong> STT transcription</strong>, <strong>LLM speaker repair</strong>,
+              and <strong>LLM quality analysis + flagging</strong>.
+            </p>
           </div>
 
           <div
@@ -140,20 +133,74 @@ export default function UploadPage() {
             </div>
           )}
 
-          <div className={styles.uploadOptions}>
-            <input
-              className={styles.advisorInput}
-              type="text"
-              placeholder="Advisor ID (optional)"
-              value={advisorId}
-              onChange={e => setAdvisorId(e.target.value)}
-            />
+          <div className={styles.assignmentSection}>
+            <div className={styles.assignmentHeader}>
+              <h2 className={styles.assignmentTitle}>Assign Recording</h2>
+              <p className={styles.assignmentHint}>
+                Choose the team first, then the advisor. Upload stays disabled until both are selected.
+              </p>
+            </div>
+
+            {(teamsError || advisorsError) && (
+              <div className={styles.selectorError}>
+                {teamsError || advisorsError}
+              </div>
+            )}
+
+            <div className={styles.selectorGrid}>
+              <div className={styles.selectorField}>
+                <label htmlFor="team-select">Team</label>
+                <select
+                  id="team-select"
+                  className={styles.selectInput}
+                  value={selectedTeamId}
+                  onChange={(e) => {
+                    setSelectedTeamId(e.target.value)
+                    setSelectedAdvisorId('')
+                  }}
+                  disabled={teamsLoading}
+                >
+                  <option value="">
+                    {teamsLoading ? 'Loading teams...' : 'Select team'}
+                  </option>
+                  {teams.map((team) => (
+                    <option key={team.id} value={team.id}>
+                      {team.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className={styles.selectorField}>
+                <label htmlFor="advisor-select">Advisor</label>
+                <select
+                  id="advisor-select"
+                  className={styles.selectInput}
+                  value={selectedAdvisorId}
+                  onChange={(e) => setSelectedAdvisorId(e.target.value)}
+                  disabled={!selectedTeamId || advisorsLoading}
+                >
+                  <option value="">
+                    {!selectedTeamId
+                      ? 'Select team first'
+                      : advisorsLoading
+                        ? 'Loading advisors...'
+                        : 'Select advisor'}
+                  </option>
+                  {advisors.map((advisor) => (
+                    <option key={advisor.id} value={advisor.id}>
+                      {advisor.name}{advisor.role ? ` (${advisor.role})` : ''}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
           </div>
 
           <div className={styles.actions}>
             <button
               className={styles.primaryBtn}
-              disabled={!file}
+              disabled={!file || !selectedTeamId || !selectedAdvisorId}
               onClick={handleUpload}
             >
               Upload & Analyze

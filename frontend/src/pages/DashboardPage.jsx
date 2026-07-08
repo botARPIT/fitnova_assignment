@@ -28,26 +28,26 @@ export default function DashboardPage() {
           <div className={styles.cards}>
             <div className={styles.card}>
               <div className={styles.cardLabel}>Total Calls</div>
-              <div className={styles.cardValue}>{overview.total_calls ?? 0}</div>
+              <div className={styles.cardValue}>{overview.summary?.total_calls ?? overview.total_calls ?? 0}</div>
             </div>
             <div className={styles.card}>
               <div className={styles.cardLabel}>Completed</div>
-              <div className={styles.cardValue}>{overview.completed_calls ?? 0}</div>
+              <div className={styles.cardValue}>{overview.summary?.completed_calls ?? overview.completed_calls ?? 0}</div>
             </div>
             <div className={styles.card}>
               <div className={styles.cardLabel}>Failed</div>
-              <div className={styles.cardValue}>{overview.failed_calls ?? 0}</div>
+              <div className={styles.cardValue}>{overview.summary?.failed_calls ?? overview.failed_calls ?? 0}</div>
             </div>
             <div className={styles.card}>
               <div className={styles.cardLabel}>Active Advisors</div>
-              <div className={styles.cardValue}>{overview.active_advisors ?? 0}</div>
+              <div className={styles.cardValue}>{overview.summary?.active_advisors ?? overview.active_advisors ?? 0}</div>
             </div>
           </div>
 
           <div className={styles.grid}>
             <div className={styles.section}>
               <h2 className={styles.sectionTitle}>Average Score</h2>
-              <ScoreGauge value={overview.avg_score} size="lg" />
+              <ScoreGauge value={overview.summary?.avg_score ?? overview.avg_score ?? 0} size="lg" />
             </div>
 
             <div className={styles.section}>

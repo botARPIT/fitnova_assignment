@@ -12,43 +12,50 @@ class PipelineError(HTTPException):
 
 class AudioValidationError(PipelineError):
     def __init__(self, reason: str):
-        super().__init__(status_code=422, detail=f"Audio validation failed: {reason}")
+        super().__init__(status_code=422, detail="Audio input failed validation.")
+        self.reason = reason
 
 
 class IngestionError(PipelineError):
     def __init__(self, reason: str):
-        super().__init__(status_code=500, detail=f"Ingestion failed: {reason}")
+        super().__init__(status_code=500, detail="Unable to ingest the uploaded file.")
+        self.reason = reason
 
 
 class TranscriptionError(PipelineError):
     def __init__(self, reason: str):
-        super().__init__(status_code=502, detail=f"Transcription failed: {reason}")
+        super().__init__(status_code=502, detail="Transcription provider request failed.")
+        self.reason = reason
 
 
 class SpeakerRepairError(PipelineError):
     def __init__(self, reason: str):
-        super().__init__(status_code=502, detail=f"Speaker repair failed: {reason}")
+        super().__init__(status_code=502, detail="Speaker attribution step failed.")
+        self.reason = reason
 
 
 class ConversationValidationError(PipelineError):
     def __init__(self, reason: str):
-        super().__init__(status_code=422, detail=f"Conversation validation failed: {reason}")
+        super().__init__(status_code=422, detail="Transcript content failed validation.")
+        self.reason = reason
 
 
 class AnalysisError(PipelineError):
     def __init__(self, reason: str):
-        super().__init__(status_code=502, detail=f"Analysis failed: {reason}")
+        super().__init__(status_code=502, detail="Analysis provider request failed.")
+        self.reason = reason
 
 
 class PersistenceError(PipelineError):
     def __init__(self, reason: str):
-        super().__init__(status_code=500, detail=f"Persistence failed: {reason}")
+        super().__init__(status_code=500, detail="Unable to persist call results.")
+        self.reason = reason
 
 
 class ReviewError(PipelineError):
     """Raised when a review operation fails (duplicate contest, invalid flag, etc)."""
     def __init__(self, reason: str):
-        super().__init__(status_code=400, detail=f"Review error: {reason}")
+        super().__init__(status_code=400, detail=reason)
 
 
 class ReviewPermissionError(PipelineError):
@@ -61,3 +68,10 @@ class ReviewNotFoundError(PipelineError):
     """Raised when a review or flag is not found."""
     def __init__(self, reason: str = "Review not found"):
         super().__init__(status_code=404, detail=reason)
+
+
+class CallConflictError(PipelineError):
+    """Raised when a call is already being processed."""
+    def __init__(self, call_id: str, detail: str = "Call is already being processed"):
+        super().__init__(status_code=409, detail=detail)
+        self.call_id = call_id

@@ -23,16 +23,16 @@ log = logging.getLogger("fitnova.services.review")
 
 ALLOWED_RESOLVE_DECISIONS = {"accepted", "overturned"}
 RESOLVER_ROLES = {"team_leader", "director"}
+CONTESTOR_ROLES = {"advisor"}
 
 
 async def _get_advisor_role(pool, advisor_id: str) -> str | None:
     """Look up an advisor's role. Returns None if advisor doesn't exist."""
-    from db.analytics_repository import list_advisors
-    advisors = await list_advisors(pool)
-    for a in advisors:
-        if str(a["id"]) == advisor_id:
-            return a.get("role", "advisor")
-    return None
+    from db.analytics_repository import get_advisor_by_id
+    advisor = await get_advisor_by_id(pool, advisor_id)
+    if not advisor:
+        return None
+    return advisor.get("role", "advisor")
 
 
 async def contest_flag(
@@ -66,10 +66,15 @@ async def contest_flag(
             f"Flag {flag_id} already has a PENDING review ({existing['id']})"
         )
 
-    # 3. Verify advisor exists
+    # 3. Verify advisor exists and is allowed to contest
     role = await _get_advisor_role(pool, advisor_id)
     if role is None:
         raise ReviewNotFoundError(f"Advisor {advisor_id} not found")
+    if role not in CONTESTOR_ROLES:
+        raise ReviewPermissionError(
+            f"Advisor {advisor_id} has role '{role}', "
+            f"but only {CONTESTOR_ROLES} can contest flags"
+        )
 
     # 4. Create review
     review = await review_repository.create_review(

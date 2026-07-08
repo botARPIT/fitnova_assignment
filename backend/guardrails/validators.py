@@ -12,6 +12,7 @@ Validator hierarchy:
 import logging
 from dataclasses import dataclass, field
 
+from config import settings
 from rapidfuzz import fuzz
 
 log = logging.getLogger("fitnova.guards.validators")
@@ -193,6 +194,28 @@ def verify_quote(quote: str, full_text: str) -> float:
     return best
 
 
+def match_quote_to_turn(quote: str, turns: list) -> tuple[int | None, float]:
+    """Find the best matching transcript turn for a quoted excerpt."""
+    if not quote or not turns:
+        return None, 0.0
+
+    best_index: int | None = None
+    best_score = 0.0
+
+    for index, turn in enumerate(turns):
+        text = getattr(turn, "text", "") or ""
+        if not text:
+            continue
+        score = fuzz.partial_ratio(quote.lower(), text.lower()) / 100.0
+        if score > best_score:
+            best_index = index
+            best_score = score
+            if best_score >= 0.98:
+                break
+
+    return best_index, best_score
+
+
 def verify_all_quotes(
     flags: list,
     transcript_text: str,
@@ -234,11 +257,18 @@ def verify_all_quotes(
             flagged.discard_reason = (
                 f"Quote match score {match_score:.2f} below threshold {threshold:.2f}"
             )
-            log.warning(
-                f"DISCARDED hallucinated flag: tag={flagged.tag}, "
-                f"match={match_score:.0%} < {threshold:.0%}, "
-                f"quote='{quoted[:60]}...'"
-            )
+            if settings.log_sensitive_details:
+                log.warning(
+                    f"DISCARDED hallucinated flag: tag={flagged.tag}, "
+                    f"match={match_score:.0%} < {threshold:.0%}"
+                )
+            else:
+                log.warning(
+                    "Discarded unsupported flag: tag=%s match=%s threshold=%s",
+                    flagged.tag,
+                    f"{match_score:.0%}",
+                    f"{threshold:.0%}",
+                )
             discarded.append(flagged)
 
     log.info(
@@ -286,8 +316,8 @@ def validate_analysis_output(analysis) -> ValidationResult:
         if isinstance(entry, dict):
             score = entry.get("score", -1)
             evidence = entry.get("evidence", "")
-            if not isinstance(score, int):
-                result.add_error(f"Score for '{dim}' is not an integer: {score}")
+            if not isinstance(score, (int, float)):
+                result.add_error(f"Score for '{dim}' is not numeric: {score}")
             elif score < 0 or score > 5:
                 result.add_error(f"Score for '{dim}' out of range: {score} (must be 0-5)")
             if not evidence:
@@ -301,8 +331,8 @@ def validate_analysis_output(analysis) -> ValidationResult:
         for entry in scores_dict.values():
             if isinstance(entry, dict):
                 s = entry.get("score", -1)
-                if isinstance(s, int):
-                    values.append(s)
+                if isinstance(s, (int, float)):
+                    values.append(float(s))
         if values:
             overall = sum(values) / len(values)
             result.stats["computed_overall"] = round(overall, 2)

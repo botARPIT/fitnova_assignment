@@ -9,9 +9,11 @@ import logging
 
 import asyncpg
 
+from config import settings
 from db import call_repository, transcript_repository, analysis_repository
 from errors import PersistenceError
 from pipeline.context import PipelineContext
+from utils.pii import redact_turns
 
 log = logging.getLogger("fitnova.services.persistence")
 
@@ -36,15 +38,35 @@ def _build_timings_dict(ctx: PipelineContext) -> dict:
     }
 
 
-async def persist_call(pool: asyncpg.Pool, ctx: PipelineContext) -> dict:
-    """Persist the full pipeline result in a single transaction.
+async def create_call(pool: asyncpg.Pool, ctx: PipelineContext) -> dict:
+    """Create a new call record via idempotent upsert.
+
+    Returns the call record dict with id populated.
+    The call's file_sha256, source, and org are used for idempotency.
+    """
+    async with pool.acquire() as conn:
+        result = await call_repository.create_if_absent(
+            conn,
+            organization_id=ctx.organization_id,
+            ingestion_fingerprint=ctx.ingestion_fingerprint,
+            source=ctx.source,
+            external_call_id=ctx.external_call_id,
+            advisor_id=ctx.advisor_id,
+            audio_path=ctx.audio_path,
+        )
+        ctx.call_id = result["id"]
+        return result
+
+
+async def persist_results(pool: asyncpg.Pool, ctx: PipelineContext) -> dict:
+    """Persist pipeline results for an existing call in a single transaction.
 
     Args:
         pool: Database connection pool
         ctx: PipelineContext with all pipeline outputs
 
     Returns:
-        The created/updated call record as a dict
+        The updated call record as a dict
 
     Raises:
         PersistenceError: if any DB operation fails
@@ -52,21 +74,15 @@ async def persist_call(pool: asyncpg.Pool, ctx: PipelineContext) -> dict:
     async with pool.acquire() as conn:
         async with conn.transaction():
             try:
-                # 1. Create call record
-                call = await call_repository.create_call(
-                    conn,
-                    organization_id=ctx.organization_id or "00000000-0000-0000-0000-000000000001",
-                    advisor_id=ctx.advisor_id,
-                    audio_path=ctx.audio_path,
-                )
-
-                # 2. Save raw transcript
-                raw_data = [t.model_dump() for t in ctx.raw_transcript]
-                diarized_data = [t.model_dump() for t in ctx.repaired_transcript]
+                # 1. Save raw transcript
+                redacted_raw_turns = redact_turns(ctx.raw_transcript)
+                redacted_repaired_turns = redact_turns(ctx.repaired_transcript)
+                raw_data = [t.model_dump() for t in redacted_raw_turns]
+                diarized_data = [t.model_dump() for t in redacted_repaired_turns]
 
                 await transcript_repository.save_transcript(
                     conn,
-                    call_id=call["id"],
+                    call_id=ctx.call_id,
                     raw_transcript=raw_data,
                     diarized_transcript=diarized_data,
                     engine=ctx.metadata.transcription_engine,
@@ -74,38 +90,64 @@ async def persist_call(pool: asyncpg.Pool, ctx: PipelineContext) -> dict:
                     timings=_build_timings_dict(ctx),
                 )
 
-                # 3. Save report (scores + verified flags + discarded)
+                # 2. Save report (scores + verified flags + discarded)
                 flags_data = [f.model_dump() for f in ctx.verified_flags]
                 discarded_data = [f.model_dump() for f in ctx.discarded_flags]
 
                 await analysis_repository.save_report(
                     conn,
-                    call_id=call["id"],
+                    call_id=ctx.call_id,
                     scores=ctx.scores,
                     overall_score=ctx.overall_score,
                     flags=flags_data,
                     discarded_flags=discarded_data,
                 )
 
-                # 4. Update call status to completed
-                await call_repository.update_call_status(
+                # 3. Mark call as completed
+                await call_repository.update_status(
                     conn,
-                    call_id=call["id"],
+                    call_id=ctx.call_id,
                     status="completed",
                     duration_sec=ctx.duration_sec,
                     language=ctx.language,
                 )
 
                 log.info(
-                    f"Call {call['id']} persisted: "
+                    f"Call {ctx.call_id} persisted: "
                     f"{len(ctx.raw_transcript)} raw turns, "
                     f"{len(ctx.repaired_transcript)} repaired turns, "
                     f"{len(ctx.verified_flags)} flags, "
                     f"{len(ctx.discarded_flags)} discarded ✓"
                 )
 
-                return call
+                # 4. Fetch and return the full record
+                return await call_repository.get_call(conn, ctx.call_id)
 
             except Exception as e:
-                log.error(f"Persistence failed for call {ctx.call_id}: {e}", exc_info=True)
+                if settings.log_tracebacks:
+                    log.error(
+                        "Persistence failed for call %s: %s",
+                        ctx.call_id,
+                        str(e) or type(e).__name__,
+                        exc_info=True,
+                    )
+                else:
+                    log.error("Persistence failed for call %s: %s", ctx.call_id, type(e).__name__)
                 raise PersistenceError(str(e)) from e
+
+
+async def mark_failed(
+    pool: asyncpg.Pool,
+    ctx: PipelineContext,
+    error_message: str,
+    failed_stage: str | None = None,
+) -> None:
+    """Mark a call as failed."""
+    async with pool.acquire() as conn:
+        await call_repository.update_status(
+            conn,
+            call_id=ctx.call_id,
+            status="failed",
+            error_message=error_message,
+            failed_stage=failed_stage,
+        )

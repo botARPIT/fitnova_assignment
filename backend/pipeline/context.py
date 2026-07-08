@@ -10,7 +10,7 @@ from schemas.transcript import Turn
 @dataclass
 class PipelineMetadata:
     transcription_engine: str = "deepgram"
-    llm_model: str = "gemini-2.5-flash"
+    llm_model: str = ""
     prompt_version: str = ""
     rubric_version: str = ""
     company_facts_version: str = ""
@@ -28,6 +28,10 @@ class PipelineTimings:
 @dataclass
 class PipelineContext:
     call_id: str = ""
+    file_sha256: str = ""
+    ingestion_fingerprint: str = ""
+    source: str = "FILE_UPLOAD"
+    external_call_id: Optional[str] = None
     advisor_id: Optional[str] = None
     organization_id: Optional[str] = None
     audio_path: str = ""

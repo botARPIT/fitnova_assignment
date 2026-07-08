@@ -1,4 +1,4 @@
-"""LLM-powered speaker diarization repair using Gemini.
+"""LLM-powered speaker diarization repair using OpenAI with Gemini fallback.
 
 Takes raw STT transcript (often with broken speaker labels on mono audio)
 and re-assigns speakers using conversational context.
@@ -6,12 +6,13 @@ and re-assigns speakers using conversational context.
 All prompts and schemas are imported from the central guardrails module.
 """
 
-import json
 import logging
+import json
 
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.messages import SystemMessage, HumanMessage
 
+from config import settings
 from schemas.transcript import Turn
 
 # ── Central guardrails imports ─────────────────────────────────
@@ -22,9 +23,49 @@ from guardrails.validators import validate_repair_output
 log = logging.getLogger("fitnova.speaker_repair")
 
 
+def _build_messages(input_text: str):
+    return [
+        SystemMessage(content=SPEAKER_REPAIR_SYSTEM),
+        HumanMessage(content=build_speaker_repair_human(input_text)),
+    ]
+
+
+def _invoke_openai_speaker_repair(input_text: str) -> SpeakerRepairOutput:
+    try:
+        from langchain_openai import ChatOpenAI
+    except ImportError as exc:
+        raise RuntimeError(
+            "OpenAI speaker repair requested but langchain_openai is not installed in the backend environment"
+        ) from exc
+
+    llm = ChatOpenAI(
+        model=settings.speaker_repair_primary_model,
+        temperature=0,
+        api_key=settings.openai_api_key,
+        base_url=settings.openai_base_url,
+    )
+    structured_llm = llm.with_structured_output(SpeakerRepairOutput)
+    return structured_llm.invoke(_build_messages(input_text))
+
+
+def _invoke_gemini_speaker_repair(
+    input_text: str,
+    google_api_key: str,
+    model_name: str,
+) -> SpeakerRepairOutput:
+    llm = ChatGoogleGenerativeAI(
+        model=model_name,
+        temperature=0,
+        google_api_key=google_api_key,
+    )
+    structured_llm = llm.with_structured_output(SpeakerRepairOutput)
+    return structured_llm.invoke(_build_messages(input_text))
+
+
 def repair_speakers(
     raw_turns: list[Turn],
     google_api_key: str,
+    model_name: str,
 ) -> list[Turn]:
     """Re-diarize a transcript using Gemini.
 
@@ -39,6 +80,7 @@ def repair_speakers(
         raw_turns: List of Turn objects from the STT engine (possibly with
                    broken speaker labels).
         google_api_key: Google API key for Gemini.
+        model_name: Configured Gemini model for speaker repair.
 
     Returns:
         List of Turn objects with corrected speaker labels ("Advisor"/"Customer").
@@ -56,62 +98,78 @@ def repair_speakers(
 
     input_text = "\n".join(input_lines)
 
-    # ── Call Gemini with centralized prompt ─────────────────────
-    llm = ChatGoogleGenerativeAI(
-        model="gemini-2.5-flash",
-        temperature=0,
-        google_api_key=google_api_key,
-    )
-
+    provider_used = "gemini"
     try:
-        response = llm.invoke([
-            SystemMessage(content=SPEAKER_REPAIR_SYSTEM),
-            HumanMessage(content=build_speaker_repair_human(input_text)),
-        ])
+        if settings.openai_api_key:
+            provider_used = "openai"
+            response = _invoke_openai_speaker_repair(input_text)
+            log.info(
+                "Speaker repair completed with primary provider: OpenAI (%s)",
+                settings.speaker_repair_primary_model,
+            )
+        else:
+            response = _invoke_gemini_speaker_repair(
+                input_text=input_text,
+                google_api_key=google_api_key,
+                model_name=model_name,
+            )
+            log.info("Speaker repair completed with fallback-only provider: Gemini (%s)", model_name)
     except Exception as e:
-        log.error(f"Gemini speaker repair failed: {e}")
-        raise RuntimeError(f"Speaker repair failed: {e}") from e
-
-    # ── Parse response ─────────────────────────────────────────
-    response_text = response.content.strip()
-
-    # Strip markdown code fence if present
-    if response_text.startswith("```"):
-        lines = response_text.split("\n")
-        lines = [l for l in lines if not l.strip().startswith("```")]
-        response_text = "\n".join(lines)
-
-    try:
-        repaired_raw = json.loads(response_text)
-    except json.JSONDecodeError as e:
-        log.error(f"Failed to parse Gemini response as JSON: {e}")
-        log.debug(f"Raw response: {response_text[:500]}")
-        raise RuntimeError(f"Speaker repair returned invalid JSON: {e}") from e
-
-    # ── Schema validation via Pydantic ─────────────────────────
-    if not isinstance(repaired_raw, list):
-        raise RuntimeError(f"Expected list from Gemini, got {type(repaired_raw)}")
+        if settings.openai_api_key:
+            if settings.log_tracebacks:
+                log.warning(
+                    "OpenAI speaker repair failed, falling back to Gemini: %s",
+                    str(e) or type(e).__name__,
+                    exc_info=True,
+                )
+            else:
+                log.warning(
+                    "OpenAI speaker repair failed, falling back to Gemini: %s",
+                    type(e).__name__,
+                )
+            provider_used = "gemini"
+            try:
+                response = _invoke_gemini_speaker_repair(
+                    input_text=input_text,
+                    google_api_key=google_api_key,
+                    model_name=model_name,
+                )
+                log.info("Speaker repair fallback succeeded with Gemini (%s)", model_name)
+            except Exception as fallback_exc:
+                if settings.log_tracebacks:
+                    log.error(
+                        "Gemini speaker repair fallback failed: %s",
+                        str(fallback_exc) or type(fallback_exc).__name__,
+                        exc_info=True,
+                    )
+                else:
+                    log.error(
+                        "Gemini speaker repair fallback failed: %s",
+                        type(fallback_exc).__name__,
+                    )
+                raise RuntimeError(f"Speaker repair failed: {fallback_exc}") from fallback_exc
+        else:
+            if settings.log_tracebacks:
+                log.error("Gemini speaker repair failed: %s", str(e) or type(e).__name__, exc_info=True)
+            else:
+                log.error("Gemini speaker repair failed: %s", type(e).__name__)
+            raise RuntimeError(f"Speaker repair failed: {e}") from e
 
     repaired_turns = []
-    for i, item in enumerate(repaired_raw):
+    for i, validated in enumerate(response.turns):
         # Map invalid speakers to "Customer" before schema validation
-        speaker = item.get("speaker", "Unknown")
+        speaker = validated.speaker.value if hasattr(validated.speaker, "value") else str(validated.speaker)
         if speaker not in ("Advisor", "Customer"):
             log.warning(f"Turn {i}: invalid speaker '{speaker}' → mapping to 'Customer'")
-            item["speaker"] = "Customer"
-
-        try:
-            validated = RepairedTurn(**item)
-            repaired_turns.append(validated)
-        except Exception as e:
-            log.warning(f"Turn {i}: schema validation failed ({e}) — using raw values")
-            # Fallback: create turn from raw values
             repaired_turns.append(RepairedTurn(
                 speaker="Customer",
-                start=float(item.get("start", 0)),
-                end=max(float(item.get("end", 0)), float(item.get("start", 0))),
-                text=str(item.get("text", "")) or "[empty]",
+                start=validated.start,
+                end=max(validated.end, validated.start),
+                text=validated.text or "[empty]",
             ))
+            continue
+
+        repaired_turns.append(validated)
 
     # ── Output validator ───────────────────────────────────────
     validation = validate_repair_output(
@@ -138,9 +196,20 @@ def repair_speakers(
             text=rt.text,
         ))
 
+    if settings.log_sensitive_details:
+        log.info(
+            "LLM-corrected diarization output:\n%s",
+            json.dumps(
+                [turn.model_dump() for turn in result_turns],
+                ensure_ascii=False,
+                indent=2,
+            ),
+        )
+
     log.info(
         f"Speaker repair complete: {len(raw_turns)} → {len(result_turns)} turns, "
         f"speakers={set(t.speaker for t in result_turns)}, "
+        f"provider={provider_used}, "
         f"validation={'✓' if validation.ok else '⚠ (see warnings)'}"
     )
     return result_turns

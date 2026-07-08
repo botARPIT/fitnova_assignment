@@ -25,30 +25,29 @@
   background: var(--surface-container-lowest);
   border: 1px solid var(--outline-variant);
   border-radius: var(--border-radius-lg);
-  text-align: center;
   box-shadow: var(--shadow-md);
   transition: var(--transition-normal);
 }
 
-.progressBar {
-  height: 6px;
-  background: var(--surface-container-high);
-  border-radius: 3px;
-  overflow: hidden;
-  margin: 24px 0 16px;
-}
-
-.progressFill {
-  height: 100%;
-  background: linear-gradient(90deg, var(--primary), var(--surface-tint));
-  border-radius: 3px;
-  transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+.progressSection > :first-child {
+  margin-bottom: 8px;
 }
 
 .progressText {
   font-size: 0.9rem;
-  font-weight: 500;
+  font-weight: 600;
   color: var(--on-surface-variant);
+  text-align: center;
+  margin-top: 4px;
+}
+
+.stageHint {
+  margin-top: 10px;
+  text-align: center;
+  font-size: 0.78rem;
+  color: var(--outline);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
 }
 
 .resultSection {
@@ -77,71 +76,63 @@
   gap: 16px;
 }
 
-.engineSelector {
-  margin-bottom: 28px;
+@media (max-width: 640px) {
+  .page {
+    padding: 20px 16px;
+  }
+
+  .progressSection {
+    padding: 28px 20px;
+  }
+
+  .resultInfo {
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .resultActions {
+    flex-direction: column;
+  }
+
+  .primaryBtn,
+  .secondaryBtn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .selectorGrid {
+    grid-template-columns: 1fr;
+  }
 }
 
-.engineLabel {
-  display: block;
-  font-size: 0.8rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: var(--on-surface-variant);
-  margin-bottom: 10px;
-}
-
-.engineOptions {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 16px;
-}
-
-.engineBtn {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  padding: 16px;
-  background: var(--surface-container-lowest);
+.runtimeNote {
+  margin-bottom: 24px;
+  padding: 16px 18px;
   border: 1px solid var(--outline-variant);
   border-radius: var(--border-radius);
-  cursor: pointer;
-  text-align: left;
-  color: var(--on-surface-variant);
-  transition: var(--transition-fast);
-  font-family: inherit;
+  background: linear-gradient(180deg, var(--surface-container-lowest), var(--surface-container-low));
   box-shadow: var(--shadow-sm);
 }
 
-.engineBtn:hover {
-  border-color: var(--primary);
-  background: var(--surface-container-low);
-  transform: translateY(-1px);
-  box-shadow: var(--shadow-md);
-}
-
-.engineActive {
-  border-color: var(--primary);
-  background: var(--secondary-container);
-  color: var(--on-surface);
-  box-shadow: var(--shadow-md);
-}
-
-.engineIcon {
-  font-size: 1.6rem;
-  flex-shrink: 0;
-}
-
-.engineBtn strong {
-  display: block;
-  font-size: 0.9rem;
-  font-weight: 600;
-  color: var(--on-surface);
-}
-
-.engineBtn small {
-  font-size: 0.75rem;
+.runtimeNote p {
+  margin: 10px 0 0;
   color: var(--on-surface-variant);
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.runtimeBadge {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: var(--secondary-container);
+  color: var(--primary);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
 }
 
 .dropZone {
@@ -250,11 +241,54 @@
   color: var(--error);
 }
 
-.uploadOptions {
-  margin-top: 20px;
+.assignmentSection {
+  margin-top: 22px;
+  padding: 18px;
+  border: 1px solid var(--outline-variant);
+  border-radius: var(--border-radius);
+  background: var(--surface-container-lowest);
+  box-shadow: var(--shadow-sm);
 }
 
-.advisorInput {
+.assignmentHeader {
+  margin-bottom: 14px;
+}
+
+.assignmentTitle {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--on-surface);
+}
+
+.assignmentHint {
+  margin: 6px 0 0;
+  font-size: 0.85rem;
+  color: var(--on-surface-variant);
+  line-height: 1.5;
+}
+
+.selectorGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.selectorField {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.selectorField label {
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--on-surface-variant);
+}
+
+.selectInput {
   width: 100%;
   padding: 12px 16px;
   background: var(--surface-container-lowest);
@@ -267,14 +301,24 @@
   transition: var(--transition-fast);
 }
 
-.advisorInput:focus {
+.selectInput:focus {
   outline: none;
   border-color: var(--primary);
   box-shadow: 0 0 0 3px rgba(0, 76, 237, 0.15);
 }
 
-.advisorInput::placeholder {
-  color: var(--outline);
+.selectInput:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.selectorError {
+  margin-bottom: 12px;
+  padding: 10px 12px;
+  border-radius: var(--border-radius-sm);
+  background: var(--error-container);
+  color: var(--error);
+  font-size: 0.85rem;
 }
 
 .actions {

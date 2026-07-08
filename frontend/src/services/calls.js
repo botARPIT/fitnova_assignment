@@ -30,6 +30,7 @@ export function normalizeCallDetail(call) {
     raw_transcript: rawTurns,
     diarized_transcript: diarizedTurns,
     turns: diarizedTurns.length > 0 ? diarizedTurns : rawTurns,
+    transcript_source: diarizedTurns.length > 0 ? 'gemini_corrected' : 'deepgram_raw',
     flags: Array.isArray(call.flags) ? call.flags.map(normalizeFlag) : [],
     discarded_flags: Array.isArray(call.discarded_flags)
       ? call.discarded_flags.map(normalizeFlag)

@@ -11,12 +11,14 @@ To add a new source, implement the IngestAdapter ABC and register it
 in the ADAPTERS dict at the bottom of this file.
 """
 
+import hashlib
 import logging
-import uuid
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional
+
+from config import settings
 
 log = logging.getLogger("fitnova.ingestion")
 
@@ -26,11 +28,13 @@ log = logging.getLogger("fitnova.ingestion")
 @dataclass
 class CallMetadata:
     """Standardized metadata for an ingested call, regardless of source."""
-    call_id: str
-    audio_path: str              # Local path where audio was saved
-    audio_bytes: bytes           # Raw audio content
-    file_extension: str          # e.g. "wav", "mp3", "m4a"
-    source: str                  # Which adapter produced this
+    call_id: str = ""            # Assigned by DB — empty until persistence
+    audio_path: str = ""         # Local path where audio was saved
+    audio_bytes: bytes = b""     # Raw audio content
+    file_extension: str = ""     # e.g. "wav", "mp3", "m4a"
+    file_sha256: str = ""        # SHA-256 of raw bytes (idempotency key)
+    ingestion_fingerprint: str = ""
+    source: str = "FILE_UPLOAD"  # Which adapter produced this
     advisor_id: Optional[str] = None
     organization_id: Optional[str] = None
     external_call_id: Optional[str] = None  # ID from external system
@@ -68,6 +72,9 @@ class FileUploadAdapter(IngestAdapter):
     
     This is the primary adapter for the prototype. Audio arrives as
     a multipart form upload and is saved to the local upload directory.
+    
+    Identity is determined by (organization_id, file_sha256).
+    Filename does NOT participate in idempotency.
     """
 
     def __init__(self, upload_dir: Path):
@@ -76,7 +83,7 @@ class FileUploadAdapter(IngestAdapter):
 
     @property
     def source_name(self) -> str:
-        return "file_upload"
+        return "FILE_UPLOAD"
 
     async def ingest(
         self,
@@ -87,22 +94,40 @@ class FileUploadAdapter(IngestAdapter):
         organization_id: str | None = None,
     ) -> CallMetadata:
         """Save uploaded audio and return standardized metadata."""
-        # Validate extension
         ext = filename.rsplit(".", 1)[-1].lower() if "." in filename else ""
         if ext not in ("wav", "mp3", "m4a"):
             raise ValueError(f"Unsupported format '.{ext}'. Use wav, mp3, or m4a.")
 
-        call_id = str(uuid.uuid4())
-        audio_path = self.upload_dir / f"{call_id}.{ext}"
+        normalized_filename = filename.strip().lower()
+        file_sha256 = hashlib.sha256(raw_bytes).hexdigest()
+        fingerprint_material = "|".join([
+            organization_id or "",
+            advisor_id or "",
+            normalized_filename,
+            file_sha256,
+        ])
+        ingestion_fingerprint = hashlib.sha256(
+            fingerprint_material.encode("utf-8")
+        ).hexdigest()
+        audio_path = self.upload_dir / f"{file_sha256}.{ext}"
         audio_path.write_bytes(raw_bytes)
 
-        log.info(f"[{self.source_name}] Ingested {filename} → {audio_path} ({len(raw_bytes)} bytes)")
+        if settings.log_file_metadata:
+            log.info(
+                f"[{self.source_name}] Ingested {filename} → {audio_path} "
+                f"({len(raw_bytes)} bytes, sha256={file_sha256[:12]}…, fp={ingestion_fingerprint[:12]}…)"
+            )
+        else:
+            log.info(
+                "[%s] Ingested upload (%d bytes)", self.source_name, len(raw_bytes)
+            )
 
         return CallMetadata(
-            call_id=call_id,
             audio_path=str(audio_path),
             audio_bytes=raw_bytes,
             file_extension=ext,
+            file_sha256=file_sha256,
+            ingestion_fingerprint=ingestion_fingerprint,
             source=self.source_name,
             advisor_id=advisor_id,
             organization_id=organization_id,

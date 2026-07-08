@@ -1,18 +1,11 @@
-"""API endpoints for the flag contestation and review workflow.
+"""API endpoints for the flag contestation and review workflow."""
 
-Thin routers — all business logic lives in services/review_service.py.
-"""
-
-import logging
-
-from fastapi import APIRouter, Body, Header, HTTPException, Request
+from fastapi import APIRouter, Header, HTTPException
 from pydantic import BaseModel
 
 from db.connection import get_pool
 from services import review_service
 from errors import ReviewError, ReviewPermissionError, ReviewNotFoundError
-
-log = logging.getLogger("fitnova.routers.reviews")
 
 router = APIRouter(prefix="/api", tags=["reviews"])
 
@@ -31,7 +24,6 @@ async def contest_flag(
     call_id: str,
     flag_id: str,
     body: ContestRequest,
-    request: Request,
     x_advisor_id: str = Header(..., alias="X-Advisor-ID"),
 ):
     """Contest an AI-generated flag.
@@ -58,7 +50,6 @@ async def contest_flag(
 async def resolve_review(
     review_id: str,
     body: DecisionRequest,
-    request: Request,
     x_advisor_id: str = Header(..., alias="X-Advisor-ID"),
 ):
     """Resolve a contested flag review.
@@ -82,7 +73,7 @@ async def resolve_review(
 
 
 @router.get("/calls/{call_id}/reviews")
-async def list_call_reviews(call_id: str, request: Request):
+async def list_call_reviews(call_id: str):
     """List all flag reviews for a call."""
     pool = await get_pool()
     reviews = await review_service.get_call_reviews(pool, call_id)
@@ -90,7 +81,7 @@ async def list_call_reviews(call_id: str, request: Request):
 
 
 @router.get("/reviews/pending")
-async def list_pending_reviews(request: Request):
+async def list_pending_reviews():
     """List all reviews awaiting team leader action."""
     pool = await get_pool()
     reviews = await review_service.get_pending_reviews(pool)

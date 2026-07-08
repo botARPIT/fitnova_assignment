@@ -1,18 +1,11 @@
-"""API endpoints for the call pipeline and call CRUD.
+"""API endpoints for the call pipeline and call CRUD."""
 
-Thin routers — no business logic, no repository calls.
-"""
+import mimetypes
 
-import logging
+from fastapi import APIRouter, HTTPException, Query, Request, UploadFile
+from fastapi.responses import FileResponse
 
-from fastapi import APIRouter, Depends, HTTPException, Query, Request, UploadFile
-
-from errors import PipelineError
-from db.call_repository import get_call, list_calls
-from db.connection import get_pool
-from services import review_service
-
-log = logging.getLogger("fitnova.routers.calls")
+from errors import CallConflictError
 
 router = APIRouter(prefix="/api/calls", tags=["calls"])
 
@@ -22,14 +15,31 @@ async def upload_call(
     request: Request,
     file: UploadFile,
     advisor_id: str = Query(None),
+    organization_id: str = Query(None),
 ):
-    """Full pipeline: upload → transcribe → analyze → store."""
+    """Full pipeline: upload → transcribe → analyze → store.
+
+    Idempotent: uploading the same file twice returns the existing result.
+    Organization_id defaults to FitNova's default org.
+    """
     pipeline = request.app.state.pipeline_service
-    result = await pipeline.process_call(
-        file=file,
-        advisor_id=advisor_id,
-    )
-    return result
+    try:
+        result = await pipeline.process_call(
+            file=file,
+            advisor_id=advisor_id,
+            organization_id=organization_id,
+        )
+        return result
+    except CallConflictError as e:
+        raise HTTPException(
+            status_code=409,
+            detail={
+                "call_id": e.call_id,
+                "status": "processing",
+                "idempotent_reuse": False,
+                "reused": False,
+            },
+        )
 
 
 @router.get("")
@@ -41,33 +51,36 @@ async def list_calls_endpoint(
     limit: int = Query(50, ge=1, le=200),
     offset: int = Query(0, ge=0),
 ):
-    pool = await get_pool()
-    calls = await list_calls(
-        pool,
+    service = request.app.state.call_service
+    return await service.list_calls(
         advisor_id=advisor_id,
         team_id=team_id,
         status=status,
         limit=limit,
         offset=offset,
     )
-    return {"calls": calls, "count": len(calls), "limit": limit, "offset": offset}
 
 
 @router.get("/{call_id}")
 async def get_call_endpoint(call_id: str, request: Request):
-    pool = await get_pool()
-    call = await get_call(pool, call_id)
+    service = request.app.state.call_service
+    call = await service.get_call_detail(call_id)
     if not call:
-        raise HTTPException(404, f"Call {call_id} not found")
-
-    # Compute effective flag statuses from review history
-    original_flags = call.get("flags") or []
-    if original_flags:
-        effective = await review_service.compute_effective_flags(
-            pool, call_id, original_flags,
-        )
-        call["effective_flags"] = effective
-    else:
-        call["effective_flags"] = []
+        raise HTTPException(404, "Call not found.")
 
     return call
+
+
+@router.get("/{call_id}/audio")
+async def get_call_audio_endpoint(call_id: str, request: Request):
+    service = request.app.state.call_service
+    audio_path = await service.get_call_audio_path(call_id)
+    if not audio_path or not audio_path.exists():
+        raise HTTPException(404, "Call audio not found.")
+
+    media_type, _encoding = mimetypes.guess_type(str(audio_path))
+    return FileResponse(
+        path=audio_path,
+        media_type=media_type or "application/octet-stream",
+        filename=audio_path.name,
+    )

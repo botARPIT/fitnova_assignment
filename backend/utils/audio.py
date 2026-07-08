@@ -7,6 +7,8 @@ import wave
 from dataclasses import dataclass
 from pathlib import Path
 
+from config import settings
+
 log = logging.getLogger("fitnova.audio")
 
 ALLOWED_EXTENSIONS = frozenset({"wav", "mp3", "m4a"})
@@ -102,7 +104,10 @@ def _detect_ffprobe(audio_path: str, ext: str) -> AudioInfo:
             format=ext,
         )
     except (FileNotFoundError, subprocess.TimeoutExpired) as e:
-        log.warning(f"ffprobe unavailable or timed out: {e} — returning defaults")
+        if settings.log_sensitive_details:
+            log.warning(f"ffprobe unavailable or timed out: {e} — returning defaults")
+        else:
+            log.warning("ffprobe unavailable or timed out — returning defaults")
         return AudioInfo(channels=1, sample_rate=44100, duration_sec=0.0, format=ext)
 
 
@@ -143,7 +148,10 @@ def split_channels(audio_path: str, output_dir: str | None = None) -> list[str]:
             output_paths.append(str(out_file))
             log.info(f"Split channel {ch} → {out_file}")
         except subprocess.CalledProcessError as e:
-            log.error(f"Failed to split channel {ch}: {e.stderr}")
+            if settings.log_sensitive_details:
+                log.error(f"Failed to split channel {ch}: {e.stderr}")
+            else:
+                log.error("Failed to split channel %s", ch)
             raise RuntimeError(f"Channel splitting failed for channel {ch}") from e
 
     return output_paths

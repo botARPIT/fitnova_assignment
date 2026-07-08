@@ -1,9 +1,9 @@
-import { useMemo } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
 import { formatTime } from '../../utils/format'
 import styles from './TranscriptViewer.module.css'
 
-export default function TranscriptViewer({ turns, highlightQuote }) {
-  const speakerColors = ['speaker0', 'speaker1', 'speaker2']
+export default function TranscriptViewer({ turns, highlightQuote, focusTurnIndex = null }) {
+  const turnRefs = useRef(new Map())
 
   const highlightedRanges = useMemo(() => {
     if (!highlightQuote) return []
@@ -20,6 +20,14 @@ export default function TranscriptViewer({ turns, highlightQuote }) {
     return ranges
   }, [turns, highlightQuote])
 
+  useEffect(() => {
+    if (focusTurnIndex == null) return
+    const node = turnRefs.current.get(focusTurnIndex)
+    if (node) {
+      node.scrollIntoView({ block: 'center', behavior: 'smooth' })
+    }
+  }, [focusTurnIndex])
+
   if (!turns || turns.length === 0) {
     return <div className={styles.empty}>No transcript available.</div>
   }
@@ -27,18 +35,35 @@ export default function TranscriptViewer({ turns, highlightQuote }) {
   return (
     <div className={styles.container}>
       {turns.map((turn, i) => {
-        const spkNum = turn.speaker?.replace('speaker_', '').replace('SPEAKER_', '') || '0'
+        const speakerRole = getSpeakerRole(turn.speaker)
         return (
-          <div key={i} className={`${styles.turn} ${highlightedRanges.some(r => r.turnIdx === i) ? styles.hasHighlight : ''}`}>
+          <div
+            key={i}
+            ref={(node) => {
+              if (node) turnRefs.current.set(i, node)
+              else turnRefs.current.delete(i)
+            }}
+            className={`
+              ${styles.turn}
+              ${styles[speakerRole]}
+              ${highlightedRanges.some(r => r.turnIdx === i) ? styles.hasHighlight : ''}
+              ${focusTurnIndex === i ? styles.focusedTurn : ''}
+            `}
+          >
             <div className={styles.turnHeader}>
-              <span className={`${styles.speaker} ${styles[speakerColors[parseInt(spkNum) % 3]]}`}>
-                {turn.speaker}
-              </span>
-              <span className={styles.time}>
-                {formatTime(turn.start)} – {formatTime(turn.end)}
+              <div className={styles.speakerBlock}>
+                <span className={`${styles.speaker} ${styles[`${speakerRole}Badge`]}`}>
+                  {formatSpeaker(turn.speaker)}
+                </span>
+                <span className={styles.time}>
+                  {formatTime(turn.start)} – {formatTime(turn.end)}
+                </span>
+              </div>
+              <span className={styles.turnIndex}>
+                Turn {i + 1}
               </span>
             </div>
-            <div className={styles.text}>
+            <div className={`${styles.text} ${styles[`${speakerRole}Text`]}`}>
               {highlightQuote && highlightedRanges.some(r => r.turnIdx === i)
                 ? highlightText(turn.text, highlightedRanges.filter(r => r.turnIdx === i), styles)
                 : turn.text}
@@ -73,4 +98,17 @@ function highlightText(text, ranges, styles) {
   }
 
   return parts
+}
+
+function getSpeakerRole(speaker = '') {
+  const normalized = String(speaker).trim().toLowerCase()
+  if (normalized === 'advisor') return 'advisor'
+  if (normalized === 'customer') return 'customer'
+  if (normalized.includes('speaker_1') || normalized.includes('speaker_01')) return 'customer'
+  return 'advisor'
+}
+
+function formatSpeaker(speaker = '') {
+  const role = getSpeakerRole(speaker)
+  return role === 'advisor' ? 'Advisor' : 'Customer'
 }

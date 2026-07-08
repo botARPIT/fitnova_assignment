@@ -105,7 +105,7 @@ async def resolve_review(
             resolved_at = NOW()
         WHERE id = $1 AND status = 'PENDING'
         RETURNING *
-    """, uuid.UUID(review_id), decision, uuid.UUID(team_leader_id), decision_reason)
+    """, uuid.UUID(review_id), decision.upper(), uuid.UUID(team_leader_id), decision_reason)
     return dict(row) if row else None
 
 

@@ -8,11 +8,22 @@ export default function FlagCard({ flag, onContest, onQuoteClick, showContest = 
     ? `${Math.round((flag.match_score <= 1 ? flag.match_score * 100 : flag.match_score))}%`
     : null
 
+  const getStatusClass = (status) => {
+    if (!status) return ''
+    if (status === 'ACTIVE') return styles.activeBadge
+    return styles[status.toLowerCase()] || ''
+  }
+
   return (
     <div className={styles.card}>
       <div className={styles.header}>
         <span className={styles.tag}>{flag.tag?.replace(/_/g, ' ')}</span>
         <span className={`${styles.severity} ${styles[flag.severity] || ''}`}>{flag.severity}</span>
+        {flag.status && (
+          <span className={`${styles.status} ${getStatusClass(flag.status)}`}>
+            {flag.status}
+          </span>
+        )}
         {matchScore && (
           <span className={styles.match}>match: {matchScore}</span>
         )}
@@ -30,7 +41,7 @@ export default function FlagCard({ flag, onContest, onQuoteClick, showContest = 
         {flag.timestamp != null && (
           <span className={styles.timestamp}>{formatTime(flag.timestamp)}</span>
         )}
-        {onContest && showContest && (
+        {onContest && showContest && (!flag.status || flag.status === 'ACTIVE') && (
           <button className={styles.contestBtn} onClick={() => onContest(flag)}>
             Contest
           </button>
@@ -39,3 +50,4 @@ export default function FlagCard({ flag, onContest, onQuoteClick, showContest = 
     </div>
   )
 }
+

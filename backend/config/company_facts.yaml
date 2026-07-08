@@ -1,61 +1,168 @@
-# FitNova Company Facts — ground truth for compliance checking
-# These facts are injected into the LLM context to detect inaccuracies
+# FitNova Company Facts — ground truth for analysis and compliance checks
+# Keep this file internally consistent. The LLM uses it as the source of truth
+# when judging pricing accuracy, feature claims, guarantees, disclosures, and
+# next-step booking behavior.
 
 company:
   name: "FitNova"
-  tagline: "AI-Powered Fitness Transformation"
-  type: "Online and Offline Fitness Coaching Platform"
+  tagline: "Personalized Fitness Coaching For Real-Life Schedules"
+  type: "Hybrid fitness and wellness coaching platform"
+  headquarters: "Bangalore, India"
+  operating_model:
+    - "Leads are handled by tele-advisors over phone calls"
+    - "Customers may choose online coaching or selected offline centers"
+    - "The primary sales goal is to book a free trial session, not force immediate payment"
+
+customer_profile:
+  primary_segments:
+    - "Working professionals trying to lose weight or improve consistency"
+    - "Beginners who need accountability and coaching support"
+    - "Customers comparing FitNova against gyms or app-only plans"
+  common_goals:
+    - "Weight loss"
+    - "Fat loss"
+    - "Muscle gain"
+    - "General fitness and consistency"
+    - "Better nutrition habits"
+  common_constraints:
+    - "Busy work schedule"
+    - "Budget sensitivity"
+    - "Low motivation or poor adherence"
+    - "Past failed gym attempts"
 
 plans:
   basic:
     name: "Basic"
-    price_monthly: 4999  # INR
+    price_monthly: 4999
     sessions_per_week: 3
+    session_format: "Small-group coaching"
+    trial: "7-day free trial available"
+    coach_type: "Shared group coach"
+    support:
+      - "Weekly coach check-in"
     features:
       - "Group workout sessions (max 10 per batch)"
       - "Basic nutrition guidelines"
       - "Weekly progress check-in"
-    coach_type: "Shared group coach"
-    trial: "7-day free trial available"
+      - "Access to standard workout calendar"
+    not_included:
+      - "Dedicated 1-on-1 coach"
+      - "Advanced customized nutrition planning"
 
   pro:
     name: "Pro"
-    price_monthly: 9999  # INR
+    price_monthly: 9999
     sessions_per_week: 5
+    session_format: "1-on-1 coaching"
+    trial: "7-day free trial available"
+    coach_type: "Dedicated 1-on-1 coach"
+    support:
+      - "WhatsApp support from coach"
+      - "Progress tracking dashboard"
     features:
       - "1-on-1 dedicated coach"
       - "Custom nutrition plan"
       - "Progress tracking dashboard"
       - "WhatsApp support from coach"
-    coach_type: "Dedicated 1-on-1 coach"
-    trial: "7-day free trial available"
+      - "Flexible rescheduling within policy window"
+    not_included:
+      - "24/7 priority support"
+      - "Dedicated physiotherapy consultation"
 
   elite:
     name: "Elite"
-    price_monthly: 17999  # INR
+    price_monthly: 17999
     sessions_per_week: 7
+    session_format: "High-touch premium coaching"
+    trial: "7-day free trial available"
+    coach_type: "Dedicated coach + nutritionist"
+    support:
+      - "Priority support"
+      - "Dedicated nutrition guidance"
     features:
       - "Daily 1-on-1 sessions"
       - "Dedicated nutritionist"
       - "Physiotherapy consultation"
       - "Priority support 24/7"
       - "Body composition analysis monthly"
-    coach_type: "Dedicated coach + nutritionist"
-    trial: "7-day free trial available"
+    not_included:
+      - "Guaranteed weight-loss outcome"
+
+sales_process:
+  required_discovery_topics:
+    - "Fitness goal"
+    - "Current routine"
+    - "Schedule availability"
+    - "Budget comfort"
+    - "Injuries or health limitations"
+    - "Preference for online vs offline coaching"
+  expected_flow:
+    - "Open politely and establish FitNova context"
+    - "Do needs discovery before pitching a plan"
+    - "Recommend a plan that matches the customer's goals and constraints"
+    - "Explain value before deep pricing discussion"
+    - "Attempt to book a free trial session before ending the call"
 
 policies:
-  - "All plans come with a 7-day free trial — no credit card required"
-  - "No long-term contracts — month-to-month billing"
-  - "EMI options available on Pro and Elite plans (3 or 6 months)"
-  - "Results vary — advisors must NOT guarantee specific weight loss numbers"
-  - "No guaranteed results claims allowed"
-  - "Refund available within 48 hours of subscription start"
-  - "Session recordings are stored for quality assurance"
+  trial:
+    - "All plans include a 7-day free trial"
+    - "No credit card is required to book the free trial"
+    - "Trial may be online or at an eligible center depending on location and slot availability"
+  pricing_and_billing:
+    - "Billing is month-to-month"
+    - "No long-term contract is required"
+    - "EMI options are available only on Pro and Elite plans"
+    - "Advisors must disclose relevant pricing truthfully"
+    - "Advisors must not invent discounts, hidden fees, or time-limited offers unless explicitly approved"
+  compliance:
+    - "Results vary by customer consistency, nutrition, sleep, and adherence"
+    - "Advisors must not guarantee exact weight loss, muscle gain, or timelines"
+    - "Advisors must not use fake urgency such as 'today only' or 'last slot' unless true and approved"
+    - "Advisors must disclose costs honestly"
+    - "Advisors should not recommend ignoring medical conditions or injuries"
+  cancellation_and_refund:
+    - "Customers may cancel future renewals"
+    - "Refund requests are reviewed under the support policy and should not be promised casually by advisors"
+
+allowed_claims:
+  - "FitNova provides coaching, accountability, structure, and program guidance"
+  - "Customers can begin with a free trial before committing"
+  - "EMI is available on eligible higher-tier plans"
+  - "Schedules are flexible within available slots"
+
+disallowed_claims:
+  - "Guaranteed weight loss"
+  - "Guaranteed body transformation in a fixed number of days"
+  - "Medically certain results"
+  - "Fake scarcity or fake deadlines"
+  - "Undisclosed total cost"
+
+common_objections:
+  budget:
+    customer_signal: "This is expensive"
+    acceptable_response:
+      - "Acknowledge the concern"
+      - "Explain value per session or coaching support"
+      - "Mention free trial"
+      - "Mention EMI only for Pro and Elite"
+  time:
+    customer_signal: "I do not have time"
+    acceptable_response:
+      - "Explore schedule constraints"
+      - "Mention flexible slots where relevant"
+      - "Offer trial booking at a practical time"
+  trust:
+    customer_signal: "I have tried gyms or programs before"
+    acceptable_response:
+      - "Acknowledge prior disappointment"
+      - "Differentiate coaching/accountability from self-guided gym usage"
+      - "Avoid guaranteeing better results"
 
 locations:
   - "Koramangala, Bangalore"
   - "Indiranagar, Bangalore"
-  - "Online (pan-India)"
+  - "HSR Layout, Bangalore"
+  - "Online coaching across India"
 
 working_hours:
   weekdays: "6 AM – 10 PM"

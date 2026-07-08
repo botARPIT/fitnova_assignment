@@ -8,6 +8,7 @@ import logging
 from pathlib import Path
 
 from schemas.transcript import Turn, TranscriptOut
+from utils.pii import redact_text
 
 log = logging.getLogger("fitnova.storage")
 
@@ -35,7 +36,20 @@ class LocalStore:
     def save_transcript(self, transcript: TranscriptOut) -> Path:
         """Save transcript as JSON. Returns the saved path."""
         out_path = self.transcripts_dir / f"{transcript.call_id}.json"
-        out_path.write_text(transcript.model_dump_json(indent=2))
+        redacted = transcript.model_copy(
+            update={
+                "turns": [
+                    Turn(
+                        speaker=t.speaker,
+                        start=t.start,
+                        end=t.end,
+                        text=redact_text(t.text),
+                    )
+                    for t in transcript.turns
+                ]
+            }
+        )
+        out_path.write_text(redacted.model_dump_json(indent=2))
         log.info(f"Transcript saved → {out_path}")
         return out_path
 
@@ -49,7 +63,7 @@ class LocalStore:
             "",
         ]
         for t in transcript.turns:
-            lines.append(f"[{t.start:.1f}s – {t.end:.1f}s] {t.speaker}: {t.text}")
+            lines.append(f"[{t.start:.1f}s – {t.end:.1f}s] {t.speaker}: {redact_text(t.text)}")
         txt_path.write_text("\n".join(lines))
         log.info(f"Readable transcript → {txt_path}")
         return txt_path

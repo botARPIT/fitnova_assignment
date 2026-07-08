@@ -3,6 +3,11 @@ __pycache__/
 *.py[codz]
 *$py.class
 backend/tests/*
+instructions/*
+ASSIGNMENT_EXECUTION_GUIDE.md
+WRITEUP.md
+.agents/
+.codex/
 # C extensions
 *.so
 Info.pdf
@@ -204,6 +209,11 @@ cython_debug/
 # .vscode/
 # Temporary file for partial code execution
 tempCodeRunnerFile.py
+*.bak
+node_modules/
+frontend/dist/
+backend/__pycache__/
+frontend/__pycache__/
 
 # Ruff stuff:
 .ruff_cache/
