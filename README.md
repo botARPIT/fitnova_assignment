@@ -140,7 +140,7 @@ For production or Vercel deployment, set `VITE_API_BASE_URL` to the public backe
 
 ## Known Limitations
 - The prototype is synchronous; large uploads block until analysis completes.
-- WhisperX remains available in code, but the primary active path is Deepgram + LLM speaker repair.
+- The active demo path is Deepgram transcription followed by LLM speaker repair and analysis.
 - Retry policies are intentionally small and tuned for demo reliability, not production throughput.
 - Organization/team/advisor data is seeded and minimal.
 

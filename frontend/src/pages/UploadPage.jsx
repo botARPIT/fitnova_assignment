@@ -58,7 +58,7 @@ export default function UploadPage() {
 
           <p className={styles.progressText}>
             {stage === 'uploading' && 'Uploading audio file...'}
-            {stage === 'processing' && 'Backend is processing the call. This currently includes transcribing, speaker repair, and flagging.'}
+            {stage === 'processing' && 'Deepgram is transcribing the call, then the LLM pipeline is repairing speakers and flagging issues.'}
             {stage === 'completed' && 'Analysis complete!'}
           </p>
           {stage && stage !== 'completed' && (
@@ -92,7 +92,7 @@ export default function UploadPage() {
             <span className={styles.runtimeBadge}>Active Pipeline</span>
             <p>
               Uploads run through the current production path:
-              <strong> STT transcription</strong>, <strong>LLM speaker repair</strong>,
+              <strong> Deepgram transcription</strong>, <strong>LLM speaker repair</strong>,
               and <strong>LLM quality analysis + flagging</strong>.
             </p>
           </div>

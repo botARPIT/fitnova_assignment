@@ -4,7 +4,6 @@ import asyncio
 import logging
 import time
 
-import torch
 from deepgram import DeepgramClient
 
 from schemas.transcript import Turn
@@ -24,6 +23,32 @@ class TranscriptionService:
     def __init__(self, settings):
         self._settings = settings
         self._whisperx_model = None
+        self._torch = None
+
+    def _get_torch(self):
+        """Import torch only when WhisperX is actually used."""
+        if self._torch is not None:
+            return self._torch
+
+        try:
+            import torch
+        except ImportError as exc:
+            raise RuntimeError(
+                "WhisperX transcription requested but torch is not installed. "
+                "Use the Deepgram path for deployment or install WhisperX dependencies."
+            ) from exc
+
+        self._torch = torch
+        return torch
+
+    def _whisperx_device(self) -> str:
+        torch = self._get_torch()
+        return "cuda" if torch.cuda.is_available() else "cpu"
+
+    def _empty_cuda_cache(self) -> None:
+        torch = self._get_torch()
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
 
     # ── WhisperX (local) ───────────────────────────────────────
 
@@ -34,7 +59,7 @@ class TranscriptionService:
 
         import whisperx
 
-        device = "cuda" if torch.cuda.is_available() else "cpu"
+        device = self._whisperx_device()
         log.info(
             f"Loading WhisperX model={self._settings.whisperx_model} "
             f"device={device} compute={self._settings.whisperx_compute_type}"
@@ -51,7 +76,7 @@ class TranscriptionService:
         """Run WhisperX transcription + alignment + pyannote diarization."""
         import whisperx
 
-        device = "cuda" if torch.cuda.is_available() else "cpu"
+        device = self._whisperx_device()
         model = self._load_whisperx_model()
         t0 = time.time()
 
@@ -74,7 +99,7 @@ class TranscriptionService:
 
         # Free alignment model memory
         del model_a
-        torch.cuda.empty_cache()
+        self._empty_cuda_cache()
 
         # 3. Diarize with pyannote
         t2 = time.time()
@@ -182,5 +207,6 @@ class TranscriptionService:
         if self._whisperx_model is not None:
             del self._whisperx_model
             self._whisperx_model = None
-            torch.cuda.empty_cache()
+            if self._torch is not None:
+                self._empty_cuda_cache()
             log.info("WhisperX model unloaded")
